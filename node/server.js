@@ -331,6 +331,225 @@ function fillLogin(u, p) {
 </html>`;
 }
 
+// Register Page Renderer
+function renderRegisterPage(error = '') {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create an Account | AA Driving School - Mombasa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #07213a 0%, #0d3b66 50%, #185a9d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding: 2rem 1rem;
+            margin: 0;
+        }
+        .signup-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 680px;
+            overflow: hidden;
+        }
+        .signup-header {
+            background: #07213a;
+            color: #ffffff;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+        .brand-badge {
+            width: 54px;
+            height: 54px;
+            background: #ffffff;
+            color: #0d3b66;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .role-btn-group input[type="radio"]:checked + label {
+            background-color: #0d3b66;
+            color: #ffffff;
+            border-color: #0d3b66;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="signup-card">
+    <div class="signup-header">
+        <div class="brand-badge"><i class="fa-solid fa-car-side"></i></div>
+        <h4 class="fw-bold mb-1">AA Driving School</h4>
+        <div class="text-white-50 small text-uppercase">Mombasa Branch &bull; Online Registration Portal</div>
+    </div>
+    <div class="p-4 p-md-5">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div>
+                <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-user-plus text-primary me-2"></i> Create an Account</h5>
+                <small class="text-muted">Register as a Student, Instructor, Receptionist, or Admin</small>
+            </div>
+            <a href="/login" class="btn btn-sm btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Login
+            </a>
+        </div>
+
+        ${error ? `<div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-1"></i> ${error}</div>` : ''}
+
+        <form method="POST" action="/register">
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-uppercase text-muted">Select Your Role / Purpose <span class="text-danger">*</span></label>
+                <div class="btn-group w-100 role-btn-group" role="group">
+                    <input type="radio" class="btn-check" name="role" id="role_student" value="Student" checked onchange="toggleRoleFields('Student')">
+                    <label class="btn btn-outline-primary py-2" for="role_student">
+                        <i class="fa-solid fa-user-graduate d-block mb-1 fs-5"></i> Student
+                    </label>
+
+                    <input type="radio" class="btn-check" name="role" id="role_instructor" value="Instructor" onchange="toggleRoleFields('Instructor')">
+                    <label class="btn btn-outline-primary py-2" for="role_instructor">
+                        <i class="fa-solid fa-chalkboard-user d-block mb-1 fs-5"></i> Instructor
+                    </label>
+
+                    <input type="radio" class="btn-check" name="role" id="role_receptionist" value="Receptionist" onchange="toggleRoleFields('Receptionist')">
+                    <label class="btn btn-outline-primary py-2" for="role_receptionist">
+                        <i class="fa-solid fa-clipboard-user d-block mb-1 fs-5"></i> Receptionist
+                    </label>
+
+                    <input type="radio" class="btn-check" name="role" id="role_admin" value="Administrator" onchange="toggleRoleFields('Administrator')">
+                    <label class="btn btn-outline-primary py-2" for="role_admin">
+                        <i class="fa-solid fa-shield-halved d-block mb-1 fs-5"></i> Admin
+                    </label>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-7">
+                    <label class="form-label fw-semibold small">Full Legal Name <span class="text-danger">*</span></label>
+                    <input type="text" name="full_name" class="form-control" placeholder="e.g. Cynthia Jeruto" required>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold small">Username <span class="text-danger">*</span></label>
+                    <input type="text" name="username" class="form-control" placeholder="e.g. cynthia" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Password <span class="text-danger">*</span></label>
+                    <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Confirm Password <span class="text-danger">*</span></label>
+                    <input type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Phone Number <span class="text-danger">*</span></label>
+                    <input type="text" name="phone" class="form-control" placeholder="e.g. +254712345678" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="e.g. student@gmail.com">
+                </div>
+            </div>
+
+            <!-- Student specific fields -->
+            <div id="student_fields" class="p-3 bg-light rounded-3 border mb-3">
+                <div class="fw-bold text-primary small mb-2"><i class="fa-solid fa-id-card me-1"></i> Learner Course & Bio Data</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Gender</label>
+                        <select name="gender" class="form-select form-select-sm">
+                            <option value="Male">Male</option>
+                            <option value="Female" selected>Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Date of Birth</label>
+                        <input type="date" name="date_of_birth" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">National ID / Passport</label>
+                        <input type="text" name="national_id" class="form-control form-control-sm" placeholder="e.g. 38491024">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Driving Course Category <span class="text-danger">*</span></label>
+                        <select name="course_category" class="form-select form-select-sm">
+                            <option value="Category B (Light Vehicle - Manual)">Category B (Light Vehicle - Manual) - KES 15,000</option>
+                            <option value="Category B (Light Vehicle - Automatic)">Category B (Light Vehicle - Automatic) - KES 16,000</option>
+                            <option value="Category A (Motorcycle)">Category A (Motorcycle) - KES 9,500</option>
+                            <option value="Category C1 (Light Truck)">Category C1 (Light Truck) - KES 18,500</option>
+                            <option value="Refresher Course">Refresher Course (10 Lessons) - KES 8,000</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Residential Area</label>
+                        <input type="text" name="address" class="form-control form-control-sm" value="Mombasa">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructor specific fields -->
+            <div id="instructor_fields" class="p-3 bg-light rounded-3 border mb-3" style="display: none;">
+                <div class="fw-bold text-warning text-dark small mb-2"><i class="fa-solid fa-id-badge me-1"></i> Instructor NTSA Credentials</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">NTSA License Number <span class="text-danger">*</span></label>
+                        <input type="text" name="license_no" class="form-control form-control-sm" placeholder="e.g. NTSA/DI/2024/701">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">License Expiry Date</label>
+                        <input type="date" name="license_expiry" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Specialization</label>
+                        <input type="text" name="specialization" class="form-control form-control-sm" value="Class B (Light Manual & Automatic)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin specific fields -->
+            <div id="admin_fields" class="p-3 bg-light rounded-3 border mb-3" style="display: none;">
+                <div class="fw-bold text-danger small mb-2"><i class="fa-solid fa-key me-1"></i> Administrator Authorization</div>
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Admin Security Passcode</label>
+                        <input type="text" name="admin_code" class="form-control form-control-sm" value="AA-ADMIN-2026">
+                        <small class="text-muted" style="font-size: 0.75rem;">Authorization passcode configured for academic defense: <code>AA-ADMIN-2026</code></small>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm mt-3" style="background-color: #0d3b66; border-color: #0d3b66;">
+                <i class="fa-solid fa-user-check me-2"></i> Complete Sign Up & Enter Portal
+            </button>
+        </form>
+
+        <div class="text-center mt-4 pt-3 border-top">
+            <span class="text-muted small">Already have an account?</span>
+            <a href="/login" class="fw-bold text-primary text-decoration-none ms-1">Log In Here</a>
+        </div>
+    </div>
+</div>
+<script>
+function toggleRoleFields(role) {
+    document.getElementById('student_fields').style.display = (role === 'Student') ? 'block' : 'none';
+    document.getElementById('instructor_fields').style.display = (role === 'Instructor') ? 'block' : 'none';
+    document.getElementById('admin_fields').style.display = (role === 'Administrator') ? 'block' : 'none';
+}
+</script>
+</body>
+</html>`;
+}
+
 // Request Handler
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
@@ -359,6 +578,133 @@ const server = http.createServer((req, res) => {
                     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
                     res.end(renderLoginPage('Invalid username or password.'));
                 }
+            });
+            return;
+        }
+    }
+
+    // Public / Register routes
+    if (pathname === '/register') {
+        if (method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderRegisterPage());
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const fullName = (body.full_name || '').trim();
+                const username = (body.username || '').trim().toLowerCase();
+                const password = (body.password || '').trim();
+                const confirmPassword = (body.confirm_password || '').trim();
+                const phone = (body.phone || '').trim();
+                const email = (body.email || '').trim() || null;
+                const role = (body.role || 'Student').trim();
+
+                const db = loadData();
+
+                if (!fullName || !username || !password || !phone) {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderRegisterPage('Full Name, Username, Password, and Phone are required.'));
+                    return;
+                }
+
+                if (password.length < 6) {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderRegisterPage('Password must be at least 6 characters long.'));
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderRegisterPage('Password and Confirm Password do not match.'));
+                    return;
+                }
+
+                if (role === 'Administrator' && body.admin_code && body.admin_code.trim() !== 'AA-ADMIN-2026') {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderRegisterPage('Invalid Administrator Passcode. Use code: AA-ADMIN-2026'));
+                    return;
+                }
+
+                if (role === 'Instructor' && !body.license_no) {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderRegisterPage('NTSA Instructor License Number is required for Instructor sign up.'));
+                    return;
+                }
+
+                if (db.users.find(u => u.username === username)) {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderRegisterPage(`Username '${username}' is already taken. Please choose another.`));
+                    return;
+                }
+
+                const nextUserId = db.users.length > 0 ? Math.max(...db.users.map(u => u.user_id)) + 1 : 1;
+                const newUser = {
+                    user_id: nextUserId,
+                    username,
+                    password,
+                    full_name: fullName,
+                    email,
+                    phone,
+                    role,
+                    status: 'Active'
+                };
+                db.users.push(newUser);
+
+                if (role === 'Student') {
+                    const nextStudentId = db.students.length > 0 ? Math.max(...db.students.map(s => s.student_id)) + 1 : 1;
+                    const feeMap = {
+                        'Category B (Light Vehicle - Manual)': 15000,
+                        'Category B (Light Vehicle - Automatic)': 16000,
+                        'Category A (Motorcycle)': 9500,
+                        'Category C1 (Light Truck)': 18500,
+                        'Refresher Course': 8000
+                    };
+                    const courseCategory = body.course_category || 'Category B (Light Vehicle - Manual)';
+                    const courseFee = feeMap[courseCategory] || 15000;
+                    const studentRegNo = `AA/MBA/${new Date().getFullYear()}/${String(nextStudentId).padStart(3, '0')}`;
+
+                    db.students.push({
+                        student_id: nextStudentId,
+                        user_id: nextUserId,
+                        student_reg_no: studentRegNo,
+                        full_name: fullName,
+                        gender: body.gender || 'Female',
+                        date_of_birth: body.date_of_birth || null,
+                        phone,
+                        email,
+                        national_id: body.national_id || null,
+                        address: body.address || 'Mombasa',
+                        course_category: courseCategory,
+                        course_fee: courseFee,
+                        registration_date: new Date().toISOString().split('T')[0],
+                        status: 'Enrolled'
+                    });
+                } else if (role === 'Instructor') {
+                    const nextInsId = db.instructors.length > 0 ? Math.max(...db.instructors.map(i => i.instructor_id)) + 1 : 1;
+                    const instructorNo = `AA-INS-${String(nextInsId).padStart(3, '0')}`;
+
+                    db.instructors.push({
+                        instructor_id: nextInsId,
+                        user_id: nextUserId,
+                        instructor_no: instructorNo,
+                        full_name: fullName,
+                        gender: body.gender || 'Male',
+                        phone,
+                        email,
+                        license_no: body.license_no,
+                        license_expiry: body.license_expiry || null,
+                        specialization: body.specialization || 'Class B (Light Manual & Automatic)',
+                        address: body.address || 'Mombasa',
+                        status: 'Active'
+                    });
+                }
+
+                saveData(db);
+
+                // Auto login
+                createSession(newUser, res);
+                res.writeHead(302, { 'Location': '/dashboard' });
+                res.end();
             });
             return;
         }
