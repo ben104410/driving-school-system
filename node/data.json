@@ -49,6 +49,16 @@
       "phone": "+254755667788",
       "role": "Student",
       "status": "Active"
+    },
+    {
+      "user_id": 6,
+      "username": "ben",
+      "password": "@benjah19",
+      "full_name": "Ben titus",
+      "email": "bentitus143@gmail.com",
+      "phone": "+254795317428",
+      "role": "Student",
+      "status": "Active"
     }
   ],
   "instructors": [
@@ -223,6 +233,22 @@
       "address": "Mombasa",
       "course_category": "Category B (Light Vehicle - Manual)",
       "course_fee": 15000,
+      "registration_date": "2026-11-16",
+      "status": "Enrolled"
+    },
+    {
+      "student_id": 7,
+      "user_id": 6,
+      "student_reg_no": "AA/MBA/2026/007",
+      "full_name": "Ben titus",
+      "gender": "Male",
+      "date_of_birth": "2004-08-08",
+      "phone": "+254795317428",
+      "email": "bentitus143@gmail.com",
+      "national_id": "42769694",
+      "address": "Mombasa",
+      "course_category": "Category A (Motorcycle)",
+      "course_fee": 9500,
       "registration_date": "2026-11-16",
       "status": "Enrolled"
     }

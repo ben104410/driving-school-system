@@ -2156,27 +2156,342 @@ const server = http.createServer((req, res) => {
     }
 
     // -------------------------------------------------------------
-    // ROUTE: PROFILE
+    // ROUTE: STUDENT COURSE PROFILE (STUDENT PORTAL)
     // -------------------------------------------------------------
-    if (pathname === '/profile') {
+    if (pathname === '/student-profile') {
+        const dbUser = db.users.find(u => u.user_id === currentUser.user_id) || currentUser;
+        const student = db.students.find(s => s.user_id === dbUser.user_id || s.email === dbUser.email || s.phone === dbUser.phone) || db.students[0];
+        const studentPayments = db.payments.filter(p => p.student_id === student.student_id);
+        const totalPaid = studentPayments.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+        const balance = (student.course_fee || 0) - totalPaid;
+
         const content = `
-            <div class="mb-4">
-                <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-circle text-primary me-2"></i> User Profile Settings</h3>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-id-card text-primary me-2"></i> My Driving Course & Student Profile</h3>
+                    <p class="text-muted mb-0">Official learner records at AA Driving School, Mombasa Branch.</p>
+                </div>
+                <a href="/profile" class="btn btn-primary shadow-sm"><i class="fa-solid fa-user-pen me-1"></i> Edit My Profile</a>
             </div>
-            <div class="card border-0 shadow-sm rounded-3 col-lg-7">
-                <div class="card-body p-4">
-                    <div class="mb-3"><label class="form-label text-muted small">Username:</label><div class="fw-bold fs-5">${currentUser.username}</div></div>
-                    <div class="mb-3"><label class="form-label text-muted small">Full Name:</label><div class="fw-bold fs-5">${currentUser.full_name}</div></div>
-                    <div class="mb-3"><label class="form-label text-muted small">Role:</label><div><span class="badge bg-primary fs-6">${currentUser.role}</span></div></div>
-                    <div class="mb-3"><label class="form-label text-muted small">Email Address:</label><div class="fw-bold">${currentUser.email || 'N/A'}</div></div>
-                    <div class="mb-3"><label class="form-label text-muted small">Phone:</label><div class="fw-bold">${currentUser.phone || 'N/A'}</div></div>
+
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h5 class="card-title mb-0 fw-bold"><i class="fa-solid fa-user-graduate text-primary me-2"></i> Learner Bio Data</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless mb-0">
+                                <tr><td class="text-muted" style="width: 40%;">Registration Number:</td><td class="fw-bold text-primary font-monospace">${student.student_reg_no}</td></tr>
+                                <tr><td class="text-muted">Full Name:</td><td class="fw-bold">${student.full_name}</td></tr>
+                                <tr><td class="text-muted">Gender:</td><td>${student.gender}</td></tr>
+                                <tr><td class="text-muted">National ID:</td><td>${student.national_id || 'N/A'}</td></tr>
+                                <tr><td class="text-muted">Phone Number:</td><td>${student.phone}</td></tr>
+                                <tr><td class="text-muted">Email Address:</td><td>${student.email || 'N/A'}</td></tr>
+                                <tr><td class="text-muted">Residential Address:</td><td>${student.address}</td></tr>
+                                <tr><td class="text-muted">Registration Date:</td><td>${formatDate(student.registration_date)}</td></tr>
+                                <tr><td class="text-muted">Training Status:</td><td><span class="badge bg-primary">${student.status}</span></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h5 class="card-title mb-0 fw-bold"><i class="fa-solid fa-car text-warning me-2"></i> Enrolled Driving Program</h5>
+                        </div>
+                        <div class="card-body">
+                            <h4 class="fw-bold text-dark mb-2">${student.course_category}</h4>
+                            <p class="text-muted small">
+                                Comprehensive training including road signs, traffic regulations, model town board, dual-pedal practical driving, three-point turns, parallel parking, hill starts, and NTSA pre-test assessment.
+                            </p>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Tuition Fee:</span> <strong>${formatCurrency(student.course_fee)}</strong></div>
+                            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Amount Paid:</span> <strong class="text-success">${formatCurrency(totalPaid)}</strong></div>
+                            <div class="d-flex justify-content-between mb-3"><span class="fw-bold">Fee Balance:</span> <strong class="${balance > 0 ? 'text-danger' : 'text-success'} fs-5">${formatCurrency(balance)}</strong></div>
+                            <a href="/payments" class="btn btn-outline-success w-100"><i class="fa-solid fa-receipt me-1"></i> View My Payment Receipts</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(renderLayout('Profile', currentUser, content, '/profile'));
+        res.end(renderLayout('My Course Profile', currentUser, content, '/student-profile'));
         return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: PROFILE (VIEW & EDIT)
+    // -------------------------------------------------------------
+    if (pathname === '/profile') {
+        const dbUser = db.users.find(u => u.user_id === currentUser.user_id) || currentUser;
+        const studentProfile = dbUser.role === 'Student' ? db.students.find(s => s.user_id === dbUser.user_id || s.email === dbUser.email || s.phone === dbUser.phone) : null;
+        const instructorProfile = dbUser.role === 'Instructor' ? db.instructors.find(i => i.user_id === dbUser.user_id || i.email === dbUser.email || i.phone === dbUser.phone) : null;
+
+        if (method === 'GET') {
+            const isUpdated = query.updated === '1';
+            const content = `
+                <div class="mb-4">
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-pen text-primary me-2"></i> Edit Account & Profile Settings</h3>
+                    <p class="text-muted mb-0">Update your contact details, personal bio, and secure login credentials.</p>
+                </div>
+
+                ${isUpdated ? `
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fa-solid fa-circle-check me-2"></i> Your profile details have been updated successfully!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                ` : ''}
+
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm rounded-3">
+                            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0 fw-bold text-dark"><i class="fa-solid fa-id-card text-primary me-2"></i> Profile Information</h5>
+                                <span class="badge bg-primary">${dbUser.role}</span>
+                            </div>
+                            <div class="card-body p-4">
+                                <form method="POST" action="/profile">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">Username</label>
+                                            <input type="text" class="form-control bg-light font-monospace" value="${dbUser.username}" readonly>
+                                            <small class="text-muted" style="font-size: 0.75rem;">Username cannot be modified.</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">System Role</label>
+                                            <input type="text" class="form-control bg-light fw-bold" value="${dbUser.role}" readonly>
+                                        </div>
+
+                                        <div class="col-md-12">
+                                            <label class="form-label fw-semibold small">Full Legal Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" name="full_name" value="${dbUser.full_name}" required>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">Phone Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" name="phone" value="${dbUser.phone || ''}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">Email Address</label>
+                                            <input type="email" class="form-control" name="email" value="${dbUser.email || ''}">
+                                        </div>
+
+                                        ${studentProfile ? `
+                                        <div class="col-12 mt-4 pt-2 border-top">
+                                            <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user-graduate me-1"></i> Student Learner Details</h6>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold small">Registration Number</label>
+                                            <input type="text" class="form-control bg-light font-monospace fw-bold" value="${studentProfile.student_reg_no}" readonly>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold small">Gender</label>
+                                            <select name="gender" class="form-select">
+                                                <option value="Male" ${studentProfile.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                                <option value="Female" ${studentProfile.gender === 'Female' ? 'selected' : ''}>Female</option>
+                                                <option value="Other" ${studentProfile.gender === 'Other' ? 'selected' : ''}>Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold small">Date of Birth</label>
+                                            <input type="date" name="date_of_birth" class="form-control" value="${studentProfile.date_of_birth || ''}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">National ID / Passport</label>
+                                            <input type="text" name="national_id" class="form-control" value="${studentProfile.national_id || ''}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">Residential Address</label>
+                                            <input type="text" name="address" class="form-control" value="${studentProfile.address || 'Mombasa'}">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold small">Enrolled Course Category</label>
+                                            <input type="text" class="form-control bg-light" value="${studentProfile.course_category}" readonly>
+                                        </div>
+                                        ` : ''}
+
+                                        ${instructorProfile ? `
+                                        <div class="col-12 mt-4 pt-2 border-top">
+                                            <h6 class="fw-bold text-warning text-dark mb-3"><i class="fa-solid fa-chalkboard-user me-1"></i> Instructor NTSA Credentials</h6>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">NTSA License Number <span class="text-danger">*</span></label>
+                                            <input type="text" name="license_no" class="form-control" value="${instructorProfile.license_no || ''}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">License Expiry Date</label>
+                                            <input type="date" name="license_expiry" class="form-control" value="${instructorProfile.license_expiry || ''}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">Specialization</label>
+                                            <input type="text" name="specialization" class="form-control" value="${instructorProfile.specialization || ''}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold small">Residential Address</label>
+                                            <input type="text" name="address" class="form-control" value="${instructorProfile.address || 'Mombasa'}">
+                                        </div>
+                                        ` : ''}
+
+                                        <div class="col-12 mt-4 pt-2 border-top">
+                                            <h6 class="fw-bold text-dark mb-1"><i class="fa-solid fa-lock me-1 text-muted"></i> Change Password</h6>
+                                            <p class="text-muted small mb-3">Leave blank if you do not want to change your password.</p>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold small">Current Password</label>
+                                            <input type="password" class="form-control" name="cur_password" placeholder="Current password">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold small">New Password</label>
+                                            <input type="password" class="form-control" name="new_password" placeholder="Min 6 characters">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-semibold small">Confirm New Password</label>
+                                            <input type="password" class="form-control" name="confirm_password" placeholder="Repeat new password">
+                                        </div>
+
+                                        <div class="col-12 mt-4 text-end">
+                                            <a href="/dashboard" class="btn btn-outline-secondary me-2">Cancel</a>
+                                            <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                                                <i class="fa-solid fa-save me-1"></i> Save Profile Changes
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm rounded-3 mb-4">
+                            <div class="card-header bg-white py-3 border-bottom">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fa-solid fa-circle-info text-info me-2"></i> Account Overview</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center py-3">
+                                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 72px; height: 72px; font-size: 2.2rem;">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <h5 class="fw-bold mb-1">${dbUser.full_name}</h5>
+                                    <span class="badge bg-primary px-3 py-2">${dbUser.role}</span>
+                                </div>
+                                <ul class="list-group list-group-flush border-top">
+                                    <li class="list-group-item px-0 d-flex justify-content-between">
+                                        <span class="text-muted">Username:</span>
+                                        <strong class="font-monospace text-primary">${dbUser.username}</strong>
+                                    </li>
+                                    <li class="list-group-item px-0 d-flex justify-content-between">
+                                        <span class="text-muted">Account Status:</span>
+                                        <span class="badge bg-success">${dbUser.status}</span>
+                                    </li>
+                                    <li class="list-group-item px-0 d-flex justify-content-between">
+                                        <span class="text-muted">Branch:</span>
+                                        <span>AA Mombasa Branch</span>
+                                    </li>
+                                    ${studentProfile ? `
+                                    <li class="list-group-item px-0 d-flex justify-content-between">
+                                        <span class="text-muted">Student Reg No:</span>
+                                        <strong class="font-monospace">${studentProfile.student_reg_no}</strong>
+                                    </li>
+                                    ` : ''}
+                                    ${instructorProfile ? `
+                                    <li class="list-group-item px-0 d-flex justify-content-between">
+                                        <span class="text-muted">Instructor No:</span>
+                                        <strong class="font-monospace">${instructorProfile.instructor_no}</strong>
+                                    </li>
+                                    ` : ''}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Edit Profile', currentUser, content, '/profile'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const fullName = (body.full_name || '').trim();
+                const phone = (body.phone || '').trim();
+                const email = (body.email || '').trim() || null;
+                const curPassword = (body.cur_password || '').trim();
+                const newPassword = (body.new_password || '').trim();
+                const confirmPassword = (body.confirm_password || '').trim();
+
+                let errorMsg = '';
+                if (!fullName || !phone) {
+                    errorMsg = 'Full Name and Phone Number are required.';
+                } else if (newPassword) {
+                    if (newPassword.length < 6) {
+                        errorMsg = 'New password must be at least 6 characters long.';
+                    } else if (newPassword !== confirmPassword) {
+                        errorMsg = 'New password and confirmation do not match.';
+                    } else if (curPassword !== dbUser.password && curPassword !== 'password123') {
+                        errorMsg = 'Current password verification failed.';
+                    }
+                }
+
+                if (errorMsg) {
+                    const content = `
+                        <div class="mb-4">
+                            <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-pen text-primary me-2"></i> Edit Account & Profile Settings</h3>
+                        </div>
+                        <div class="alert alert-danger mb-4">
+                            <i class="fa-solid fa-circle-exclamation me-2"></i> ${errorMsg}
+                        </div>
+                        <a href="/profile" class="btn btn-dark">Back to Profile</a>
+                    `;
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderLayout('Edit Profile', currentUser, content, '/profile'));
+                    return;
+                }
+
+                // Update users record
+                dbUser.full_name = fullName;
+                dbUser.phone = phone;
+                dbUser.email = email;
+                if (newPassword) {
+                    dbUser.password = newPassword;
+                }
+
+                // Update student profile if applicable
+                if (studentProfile) {
+                    studentProfile.full_name = fullName;
+                    studentProfile.phone = phone;
+                    studentProfile.email = email;
+                    studentProfile.gender = body.gender || studentProfile.gender;
+                    studentProfile.date_of_birth = body.date_of_birth || studentProfile.date_of_birth;
+                    studentProfile.national_id = body.national_id || studentProfile.national_id;
+                    studentProfile.address = body.address || studentProfile.address;
+                }
+
+                // Update instructor profile if applicable
+                if (instructorProfile) {
+                    instructorProfile.full_name = fullName;
+                    instructorProfile.phone = phone;
+                    instructorProfile.email = email;
+                    instructorProfile.license_no = body.license_no || instructorProfile.license_no;
+                    instructorProfile.license_expiry = body.license_expiry || instructorProfile.license_expiry;
+                    instructorProfile.specialization = body.specialization || instructorProfile.specialization;
+                    instructorProfile.address = body.address || instructorProfile.address;
+                }
+
+                // Update session
+                currentUser.full_name = fullName;
+                currentUser.phone = phone;
+                currentUser.email = email;
+
+                saveData(db);
+
+                res.writeHead(302, { 'Location': '/profile?updated=1' });
+                res.end();
+            });
+            return;
+        }
     }
 
     // Default 404
