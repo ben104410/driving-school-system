@@ -26,19 +26,26 @@ driving-school-system/
 │   ├── instructors.php          <-- Instructor list with NTSA license numbers
 │   ├── instructor_add.php       <-- Add instructor & license details
 │   ├── instructor_edit.php      <-- Edit instructor details
+│   ├── instructor_delete.php    <-- Remove instructor record & linked login
 │   ├── vehicles.php             <-- Fleet management (Dual-pedal cars & motorbikes)
 │   ├── vehicle_add.php          <-- Add new vehicle
 │   ├── vehicle_edit.php         <-- Edit vehicle
+│   ├── vehicle_delete.php       <-- Remove vehicle from fleet
 │   ├── schedules.php            <-- Practical driving lesson timetable
 │   ├── schedule_add.php         <-- Book lesson with Double-Booking Conflict Detection!
+│   ├── schedule_edit.php        <-- Edit scheduled bookings
 │   ├── schedule_status.php      <-- Mark lesson completed with instructor notes
 │   ├── payments.php             <-- Fee payment transaction directory
 │   ├── payment_add.php          <-- Record tuition fee installment (M-Pesa/Cash/Bank)
 │   ├── receipt.php              <-- Official printable receipt with AA Mombasa branding
 │   ├── test_results.php         <-- Driving test assessments list
 │   ├── test_result_add.php      <-- Record internal theory, mock, or NTSA test
+│   ├── test_result_edit.php     <-- Edit test scores & examiner remarks
 │   ├── reports.php              <-- Revenue, student, lesson & test pass-rate reports
 │   ├── users.php                <-- System user management
+│   ├── user_add.php             <-- Create system user account
+│   ├── user_edit.php            <-- Edit system user account
+│   ├── user_delete.php          <-- Delete system user (with self-protection)
 │   ├── profile.php              <-- My profile & password update
 │   └── student_profile.php      <-- Student portal profile
 │

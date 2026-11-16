@@ -52,6 +52,11 @@ The system implements the **Three-Tier Architecture** documented in Section 4.6 
   - Students can update their National ID, Date of Birth, Gender, and Residential Address.
   - Instructors can update their NTSA License Number, Expiry Date, Specialization, and Address.
   - Secure Password Change with current password verification and confirmation checks.
+- **Administrative Deletion & Cascading Clean-up:**
+  - **Student Deletion:** Removes student record, and automatically cascades to delete all their payment receipts, lesson bookings, driving test results, and unlinks/deletes their portal user account.
+  - **Instructor Deletion:** Permanently removes the instructor from the active roster, cancels their upcoming lesson schedules, and removes their linked portal user account.
+  - **User Account Deletion:** Allows deleting Receptionists and other Admin accounts from the System Users directory (`users.php` / `/users`), with built-in security preventing self-deletion of the active admin session.
+  - **Fleet & Schedule Deletion:** Allows removing training vehicles and deleting/canceling lesson timetable entries.
 - **Administrator:** Full administrative privileges, user management, financial oversight, instructor and fleet management, reporting.
 - **Receptionist:** Front-desk student registration, tuition fee recording, receipt printing, and lesson scheduling.
 - **Instructor:** Access to assigned student rosters, daily driving lesson schedules, lesson status updates, and practical assessment notes.
