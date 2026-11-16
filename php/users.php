@@ -61,9 +61,18 @@ $users = $pdo->query("SELECT * FROM users ORDER BY user_id ASC")->fetchAll();
                             </td>
                             <td><small class="text-muted"><?= format_date($u['created_at']) ?></small></td>
                             <td class="text-end">
-                                <a href="user_edit.php?id=<?= $u['user_id'] ?>" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit
-                                </a>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="user_edit.php?id=<?= $u['user_id'] ?>" class="btn btn-outline-secondary" title="Edit User">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                                    </a>
+                                    <?php if ($u['user_id'] != $_SESSION['user_id']): ?>
+                                    <a href="user_delete.php?id=<?= $u['user_id'] ?>" class="btn btn-outline-danger" onclick="return confirm('Permanently delete user account <?= htmlspecialchars(addslashes($u['username'])) ?> (<?= htmlspecialchars($u['role']) ?>)? This cannot be undone.')" title="Delete User">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                    <?php else: ?>
+                                    <span class="btn btn-outline-secondary disabled" title="Current Login"><i class="fa-solid fa-user-lock"></i></span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

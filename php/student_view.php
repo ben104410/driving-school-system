@@ -55,6 +55,9 @@ $testResults = $stmtTest->fetchAll();
         <a href="payment_add.php?student_id=<?= $studentId ?>" class="btn btn-success"><i class="fa-solid fa-money-bill me-1"></i> Record Payment</a>
         <a href="schedule_add.php?student_id=<?= $studentId ?>" class="btn btn-warning text-dark"><i class="fa-solid fa-calendar-plus me-1"></i> Book Lesson</a>
         <a href="test_result_add.php?student_id=<?= $studentId ?>" class="btn btn-info text-dark"><i class="fa-solid fa-award me-1"></i> Record Test</a>
+        <?php if (has_role('Administrator')): ?>
+        <a href="student_delete.php?id=<?= $studentId ?>" class="btn btn-outline-danger" onclick="return confirm('Permanently delete student <?= htmlspecialchars(addslashes($student['full_name'])) ?> from the database? This will delete all payments, schedules, and test results.')"><i class="fa-solid fa-trash me-1"></i> Delete</a>
+        <?php endif; ?>
     </div>
 </div>
 
