@@ -147,6 +147,14 @@
       "transmission": "Manual",
       "category": "Class A2 (Motorcycle)",
       "status": "Available"
+    },
+    {
+      "vehicle_id": 5,
+      "reg_no": "KEA 456G",
+      "model": "Toyota vitz",
+      "transmission": "Automatic",
+      "category": "Class B (Light Vehicle)",
+      "status": "Available"
     }
   ],
   "students": [
@@ -234,11 +242,11 @@
       "student_id": 6,
       "user_id": null,
       "student_reg_no": "AA/MBA/2026/006",
-      "full_name": "Benjamin mwasya",
+      "full_name": "Ben titus",
       "gender": "Male",
       "date_of_birth": null,
       "phone": "+254795317428",
-      "email": "titusben64@gmail.com",
+      "email": "bentitus143@gmail.com",
       "national_id": "42769694",
       "address": "Mombasa",
       "course_category": "Category B (Light Vehicle - Manual)",
