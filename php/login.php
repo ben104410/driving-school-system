@@ -125,6 +125,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </button>
         </form>
 
+        <div class="text-center mt-3">
+            <span class="text-muted small">New to AA Driving School?</span>
+            <a href="register.php" class="fw-bold text-primary text-decoration-none ms-1">Sign Up Here</a>
+        </div>
+
         <hr class="my-4">
 
         <div class="bg-light p-3 rounded-3 border">

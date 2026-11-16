@@ -301,6 +301,10 @@ function renderLoginPage(error = '') {
                 <i class="fa-solid fa-right-to-bracket me-2"></i> Log In to Portal
             </button>
         </form>
+        <div class="text-center mt-3">
+            <span class="text-muted small">New to AA Driving School?</span>
+            <a href="/register" class="fw-bold text-primary text-decoration-none ms-1">Sign Up Here</a>
+        </div>
         <hr class="my-4">
         <div class="bg-light p-3 rounded-3 border">
             <div class="small fw-bold text-dark mb-2"><i class="fa-solid fa-key me-1 text-primary"></i> Quick Demo Accounts (Click to Fill):</div>
