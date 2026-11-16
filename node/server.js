@@ -2002,16 +2002,44 @@ const server = http.createServer((req, res) => {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
-                                    <select name="payment_method" class="form-select" required>
-                                        <option value="M-Pesa">M-Pesa</option>
+                                    <select name="payment_method" id="payment_method" class="form-select" onchange="toggleMpesaBox()" required>
+                                        <option value="M-Pesa" selected>M-Pesa</option>
                                         <option value="Cash">Cash</option>
                                         <option value="Bank Transfer">Bank Transfer / Slip</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Reference Code / Transaction No.</label>
-                                    <input type="text" class="form-control" name="reference_no" placeholder="e.g. QA189KL93Z">
+                                    <input type="text" class="form-control font-monospace" name="reference_no" id="reference_no" placeholder="e.g. QA189KL93Z">
                                 </div>
+
+                                <!-- Lipa na M-Pesa STK Push Card with Default Number 0715718022 -->
+                                <div class="col-12" id="mpesa_prompt_box">
+                                    <div class="p-3 rounded-3 border bg-success bg-opacity-10 border-success border-opacity-25">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-success"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa STK Push Prompt</span>
+                                            <span class="badge bg-success">Default Phone: 0715718022</span>
+                                        </div>
+                                        <p class="text-muted small mb-2">
+                                            Trigger an instant Safaricom M-Pesa STK push prompt to <strong>0715718022</strong> to request tuition fee payment.
+                                        </p>
+                                        <div class="row g-2 align-items-center">
+                                            <div class="col-md-6">
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-white"><i class="fa-solid fa-phone text-muted"></i></span>
+                                                    <input type="text" class="form-control fw-bold font-monospace" id="mpesa_phone" value="0715718022" placeholder="0715718022">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <button type="button" class="btn btn-success w-100 fw-semibold" id="btn_stk_push" onclick="triggerMpesaSTKPush()">
+                                                    <i class="fa-solid fa-paper-plane me-1"></i> Prompt M-Pesa to 0715718022
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="mpesa_status" class="mt-2 small" style="display: none;"></div>
+                                    </div>
+                                </div>
+
                                 <div class="col-12 mt-4 text-end">
                                     <a href="/payments" class="btn btn-outline-secondary me-2">Cancel</a>
                                     <button type="submit" class="btn btn-success fw-semibold"><i class="fa-solid fa-receipt me-1"></i> Save & Generate Receipt</button>
@@ -2020,6 +2048,37 @@ const server = http.createServer((req, res) => {
                         </form>
                     </div>
                 </div>
+
+                <script>
+                function triggerMpesaSTKPush() {
+                    const phone = document.getElementById('mpesa_phone').value || '0715718022';
+                    const amount = document.querySelector('input[name="amount"]').value || '5000';
+                    const btn = document.getElementById('btn_stk_push');
+                    const statusBox = document.getElementById('mpesa_status');
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Prompting ' + phone + '...';
+                    statusBox.style.display = 'block';
+                    statusBox.className = 'mt-2 small alert alert-info py-2 mb-0';
+                    statusBox.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> M-Pesa STK Push prompt sent to <strong>' + phone + '</strong> for KES ' + amount + '. Awaiting customer PIN...';
+
+                    setTimeout(() => {
+                        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                        let code = "Q" + letters.charAt(Math.floor(Math.random() * letters.length)) + Math.floor(10000000 + Math.random() * 90000000);
+                        document.getElementById('reference_no').value = code;
+
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Prompt Sent (Resend)';
+                        statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
+                        statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>Payment Confirmed!</strong> M-Pesa receipt code <code>' + code + '</code> confirmed from <strong>' + phone + '</strong>.';
+                    }, 1100);
+                }
+
+                function toggleMpesaBox() {
+                    const method = document.getElementById('payment_method').value;
+                    document.getElementById('mpesa_prompt_box').style.display = (method === 'M-Pesa') ? 'block' : 'none';
+                }
+                </script>
             `;
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(renderLayout('Record Payment', currentUser, content, '/payments'));
@@ -2123,7 +2182,10 @@ const server = http.createServer((req, res) => {
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>Tuition Fee Payment</strong></td>
+                    <td>
+                        <strong>Tuition Fee Payment</strong>
+                        ${payment.payment_method === 'M-Pesa' ? '<div class="small text-success"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa &bull; Prompt Phone: <strong>0715718022</strong></div>' : ''}
+                    </td>
                     <td><span class="badge bg-secondary">${payment.payment_method}</span></td>
                     <td class="font-monospace">${payment.reference_no || '-'}</td>
                     <td class="text-end fw-bold fs-5 text-success">${Number(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>

@@ -160,7 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Reference Code / M-Pesa Code</label>
-                            <input type="text" class="form-control" name="reference_no" placeholder="e.g. QA189KL93Z">
+                            <input type="text" class="form-control" name="reference_no" id="initial_ref" placeholder="e.g. QA189KL93Z">
+                            <small class="text-muted" style="font-size: 0.72rem;">Default M-Pesa prompt: <strong>0715718022</strong></small>
                         </div>
                     </div>
                 </div>

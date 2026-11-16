@@ -438,6 +438,17 @@
       "reference_no": "",
       "notes": "Tuition fee installment",
       "recorded_by": 1
+    },
+    {
+      "payment_id": 8,
+      "receipt_no": "RCT-2026-TESTMPESA",
+      "student_id": 1,
+      "amount": 5000,
+      "payment_date": "2026-11-16",
+      "payment_method": "M-Pesa",
+      "reference_no": "QA928KL10X",
+      "notes": "Tuition fee installment",
+      "recorded_by": 2
     }
   ],
   "driving_test_results": [

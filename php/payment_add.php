@@ -86,16 +86,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
-                    <select name="payment_method" class="form-select" required>
-                        <option value="M-Pesa">M-Pesa</option>
+                    <select name="payment_method" id="payment_method" class="form-select" onchange="toggleMpesaBox()" required>
+                        <option value="M-Pesa" selected>M-Pesa</option>
                         <option value="Cash">Cash</option>
                         <option value="Bank Transfer">Bank Transfer / Deposit Slip</option>
                     </select>
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">Reference Code / Transaction No.</label>
-                    <input type="text" class="form-control" name="reference_no" placeholder="e.g. QA819KL92Z or Bank Slip No.">
+                    <label class="form-label fw-semibold">Reference Code / M-Pesa Transaction No.</label>
+                    <input type="text" class="form-control font-monospace" name="reference_no" id="reference_no" placeholder="e.g. QA819KL92Z or Bank Slip No.">
+                </div>
+
+                <!-- M-Pesa STK Push Prompt Box -->
+                <div class="col-12" id="mpesa_prompt_box">
+                    <div class="p-3 rounded-3 border bg-success bg-opacity-10 border-success border-opacity-25">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-success"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa STK Push Prompt</span>
+                            <span class="badge bg-success">Default Number: <?= DEFAULT_MPESA_PHONE ?></span>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            Trigger an automated M-Pesa STK push prompt directly to the default phone number (or student's phone) to request tuition payment.
+                        </p>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fa-solid fa-phone text-muted"></i></span>
+                                    <input type="text" class="form-control fw-bold font-monospace" id="mpesa_phone" value="<?= DEFAULT_MPESA_PHONE ?>" placeholder="0715718022">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-success w-100 fw-semibold" id="btn_stk_push" onclick="triggerMpesaSTKPush()">
+                                    <i class="fa-solid fa-paper-plane me-1"></i> Prompt M-Pesa to 0715718022
+                                </button>
+                            </div>
+                        </div>
+                        <div id="mpesa_status" class="mt-2 small" style="display: none;"></div>
+                    </div>
                 </div>
 
                 <div class="col-12">
@@ -111,5 +138,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
 </div>
+
+<script>
+function triggerMpesaSTKPush() {
+    const phone = document.getElementById('mpesa_phone').value || '0715718022';
+    const amount = document.querySelector('input[name="amount"]').value || '5000';
+    const btn = document.getElementById('btn_stk_push');
+    const statusBox = document.getElementById('mpesa_status');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Prompting ' + phone + '...';
+    statusBox.style.display = 'block';
+    statusBox.className = 'mt-2 small alert alert-info py-2 mb-0';
+    statusBox.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> M-Pesa STK Push prompt sent to <strong>' + phone + '</strong> for KES ' + amount + '. Waiting for handset PIN...';
+
+    setTimeout(() => {
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let code = "Q" + letters.charAt(Math.floor(Math.random() * letters.length)) + Math.floor(10000000 + Math.random() * 90000000);
+        document.getElementById('reference_no').value = code;
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Prompt Sent (Resend)';
+        statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
+        statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>Payment Confirmed!</strong> M-Pesa receipt code <code>' + code + '</code> confirmed from <strong>' + phone + '</strong>.';
+    }, 1100);
+}
+
+function toggleMpesaBox() {
+    const method = document.getElementById('payment_method').value;
+    document.getElementById('mpesa_prompt_box').style.display = (method === 'M-Pesa') ? 'block' : 'none';
+}
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -12,6 +12,9 @@ define('DB_NAME', 'driving_school_db');
 define('SITE_NAME', 'AA Driving School - Mombasa');
 define('SITE_TAGLINE', 'Driving School Management System');
 define('CURRENCY', 'KES');
+define('DEFAULT_MPESA_PHONE', '0715718022');
+define('MPESA_PAYBILL_NUMBER', '522522');
+define('MPESA_BUSINESS_NAME', 'AA DRIVING SCHOOL MOMBASA');
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

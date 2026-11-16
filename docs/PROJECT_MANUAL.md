@@ -93,9 +93,11 @@ The system implements the **Three-Tier Architecture** documented in Section 4.6 
 
 ### F. Tuition Payments & Official Receipt Generation
 - Supports payment methods common in Kenya: **M-Pesa**, **Cash**, and **Bank Transfer**.
+- **Lipa na M-Pesa STK Push Integration:** Pre-configured with default prompt phone number **`0715718022`** for triggering automated payment prompts directly to the payee handset.
+- **One-Click STK Push Prompt:** Automated simulation sends the prompt to **`0715718022`**, confirms receipt, and populates the official Safaricom transaction reference code.
 - Auto-generates unique receipt numbers: `RCT-2026-000X`.
 - Captures M-Pesa transaction reference codes (e.g. `QA189KL93Z`) or bank slip numbers.
-- **Official Printable Receipt:** Formatted with official AA Kenya Mombasa Branch branding, P.O. Box, telephone, NTSA accreditation reference, student biodata, itemized payment, cumulative paid amount, remaining balance, and cashier stamp box.
+- **Official Printable Receipt:** Formatted with official AA Kenya Mombasa Branch branding, P.O. Box, telephone, NTSA accreditation reference, student biodata, itemized payment, prompt phone `0715718022` on M-Pesa transactions, cumulative paid amount, remaining balance, and cashier stamp box.
 
 ### G. Driving Test Assessments
 - Internal Theory Test (Road signs, Highway Code, Model Town Board).

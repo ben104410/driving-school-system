@@ -179,6 +179,9 @@ $balanceRemaining = $courseFee - $paidSoFar;
                     <td>
                         <strong>Tuition Fee Payment</strong>
                         <div class="small text-muted"><?= htmlspecialchars($payment['notes'] ?? 'Tuition fee installment') ?></div>
+                        <?php if ($payment['payment_method'] === 'M-Pesa'): ?>
+                        <div class="small text-success"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa &bull; Prompt Phone: <strong>0715718022</strong></div>
+                        <?php endif; ?>
                     </td>
                     <td><span class="badge bg-secondary"><?= htmlspecialchars($payment['payment_method']) ?></span></td>
                     <td class="font-monospace"><?= htmlspecialchars($payment['reference_no'] ?? '-') ?></td>
