@@ -962,6 +962,13 @@ const server = http.createServer((req, res) => {
                 <a href="/students/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-user-plus me-1"></i> Register Student</a>
             </div>
 
+            ${query.deleted === '1' ? `
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i> Student record and all associated records (lessons, payments, test results) were successfully deleted from the database.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            ` : ''}
+
             <div class="card border-0 shadow-sm rounded-3 mb-4">
                 <div class="card-body p-3">
                     <form method="GET" action="/students" class="row g-2 align-items-center">
@@ -1017,6 +1024,9 @@ const server = http.createServer((req, res) => {
                                                 <a href="/students/edit?id=${s.student_id}" class="btn btn-outline-secondary" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
                                                 <a href="/payments/add?student_id=${s.student_id}" class="btn btn-outline-success" title="Record Payment"><i class="fa-solid fa-money-bill"></i></a>
                                                 <a href="/schedules/add?student_id=${s.student_id}" class="btn btn-outline-warning text-dark" title="Book Lesson"><i class="fa-solid fa-calendar-plus"></i></a>
+                                                ${currentUser.role === 'Administrator' ? `
+                                                <a href="/students/delete?id=${s.student_id}" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to permanently delete student ${s.full_name.replace(/'/g, "\\'")} (${s.student_reg_no}) from the database? This cannot be undone.')" title="Delete Student"><i class="fa-solid fa-trash"></i></a>
+                                                ` : ''}
                                             </div>
                                         </td>
                                     </tr>
@@ -1172,9 +1182,13 @@ const server = http.createServer((req, res) => {
                     <span class="badge bg-primary">${student.status}</span>
                 </div>
                 <div class="d-flex gap-2">
+                    <a href="/students/edit?id=${studentId}" class="btn btn-outline-secondary"><i class="fa-solid fa-pen-to-square me-1"></i> Edit Student</a>
                     <a href="/payments/add?student_id=${studentId}" class="btn btn-success"><i class="fa-solid fa-money-bill me-1"></i> Record Payment</a>
                     <a href="/schedules/add?student_id=${studentId}" class="btn btn-warning text-dark"><i class="fa-solid fa-calendar-plus me-1"></i> Book Lesson</a>
                     <a href="/test-results/add?student_id=${studentId}" class="btn btn-info text-dark"><i class="fa-solid fa-award me-1"></i> Record Test</a>
+                    ${currentUser.role === 'Administrator' ? `
+                    <a href="/students/delete?id=${studentId}" class="btn btn-outline-danger" onclick="return confirm('Permanently delete student ${student.full_name.replace(/'/g, "\\'")} (${student.student_reg_no}) from the database? This will delete all payments, schedules, and test results.')"><i class="fa-solid fa-trash me-1"></i> Delete</a>
+                    ` : ''}
                 </div>
             </div>
 
@@ -1269,6 +1283,151 @@ const server = http.createServer((req, res) => {
     }
 
     // -------------------------------------------------------------
+    // ROUTE: STUDENTS (EDIT)
+    // -------------------------------------------------------------
+    if (pathname === '/students/edit') {
+        const studentId = Number(query.id || 0);
+        const student = db.students.find(s => s.student_id === studentId);
+        if (!student) {
+            res.writeHead(302, { 'Location': '/students' });
+            res.end();
+            return;
+        }
+
+        if (method === 'GET') {
+            const content = `
+                <div class="mb-4">
+                    <a href="/students/view?id=${studentId}" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Student Profile</a>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-pen text-primary me-2"></i> Edit Student: ${student.full_name}</h3>
+                    <span class="badge bg-light text-primary border font-monospace">${student.student_reg_no}</span>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 col-lg-8">
+                    <div class="card-body p-4">
+                        <form method="POST" action="/students/edit?id=${studentId}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Full Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="full_name" value="${student.full_name}" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Gender</label>
+                                    <select name="gender" class="form-select">
+                                        <option value="Male" ${student.gender === 'Male' ? 'selected' : ''}>Male</option>
+                                        <option value="Female" ${student.gender === 'Female' ? 'selected' : ''}>Female</option>
+                                        <option value="Other" ${student.gender === 'Other' ? 'selected' : ''}>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Date of Birth</label>
+                                    <input type="date" class="form-control" name="date_of_birth" value="${student.date_of_birth || ''}">
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Phone Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="phone" value="${student.phone}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Email Address</label>
+                                    <input type="email" class="form-control" name="email" value="${student.email || ''}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">National ID / Passport</label>
+                                    <input type="text" class="form-control" name="national_id" value="${student.national_id || ''}">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold small">Residential Address</label>
+                                    <input type="text" class="form-control" name="address" value="${student.address || 'Mombasa'}">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Course Category</label>
+                                    <select name="course_category" class="form-select">
+                                        <option value="Category B (Light Vehicle - Manual)" ${student.course_category === 'Category B (Light Vehicle - Manual)' ? 'selected' : ''}>Category B (Light Vehicle - Manual)</option>
+                                        <option value="Category B (Light Vehicle - Automatic)" ${student.course_category === 'Category B (Light Vehicle - Automatic)' ? 'selected' : ''}>Category B (Light Vehicle - Automatic)</option>
+                                        <option value="Category A (Motorcycle)" ${student.course_category === 'Category A (Motorcycle)' ? 'selected' : ''}>Category A (Motorcycle)</option>
+                                        <option value="Category C1 (Light Truck)" ${student.course_category === 'Category C1 (Light Truck)' ? 'selected' : ''}>Category C1 (Light Truck)</option>
+                                        <option value="Refresher Course" ${student.course_category === 'Refresher Course' ? 'selected' : ''}>Refresher Course</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Course Fee (KES)</label>
+                                    <input type="number" class="form-control fw-bold" name="course_fee" value="${student.course_fee}" required>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Training Status</label>
+                                    <select name="status" class="form-select">
+                                        <option value="Enrolled" ${student.status === 'Enrolled' ? 'selected' : ''}>Enrolled</option>
+                                        <option value="In Training" ${student.status === 'In Training' ? 'selected' : ''}>In Training</option>
+                                        <option value="Test Ready" ${student.status === 'Test Ready' ? 'selected' : ''}>Test Ready</option>
+                                        <option value="Completed" ${student.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                        <option value="Dropped" ${student.status === 'Dropped' ? 'selected' : ''}>Dropped</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 mt-4 text-end">
+                                    <a href="/students/view?id=${studentId}" class="btn btn-outline-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Save Changes</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Edit Student', currentUser, content, '/students'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                student.full_name = (body.full_name || student.full_name).trim();
+                student.gender = body.gender || student.gender;
+                student.date_of_birth = body.date_of_birth || student.date_of_birth;
+                student.phone = (body.phone || student.phone).trim();
+                student.email = (body.email || '').trim() || null;
+                student.national_id = (body.national_id || '').trim() || null;
+                student.address = (body.address || 'Mombasa').trim();
+                student.course_category = body.course_category || student.course_category;
+                student.course_fee = Number(body.course_fee || student.course_fee);
+                student.status = body.status || student.status;
+
+                saveData(db);
+                res.writeHead(302, { 'Location': `/students/view?id=${studentId}` });
+                res.end();
+            });
+            return;
+        }
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: STUDENTS (DELETE)
+    // -------------------------------------------------------------
+    if (pathname === '/students/delete') {
+        const studentId = Number(query.id || 0);
+        const stuIndex = db.students.findIndex(s => s.student_id === studentId);
+
+        if (stuIndex !== -1) {
+            const deletedStudent = db.students.splice(stuIndex, 1)[0];
+
+            // Cascade delete payments, schedules, test results, and linked user account
+            db.payments = db.payments.filter(p => p.student_id !== studentId);
+            db.lesson_schedules = db.lesson_schedules.filter(ls => ls.student_id !== studentId);
+            db.driving_test_results = db.driving_test_results.filter(tr => tr.student_id !== studentId);
+            if (deletedStudent.user_id) {
+                db.users = db.users.filter(u => u.user_id !== deletedStudent.user_id);
+            }
+
+            saveData(db);
+        }
+
+        res.writeHead(302, { 'Location': '/students?deleted=1' });
+        res.end();
+        return;
+    }
+
+    // -------------------------------------------------------------
     // ROUTE: INSTRUCTORS
     // -------------------------------------------------------------
     if (pathname === '/instructors') {
@@ -1281,12 +1440,19 @@ const server = http.createServer((req, res) => {
                 <a href="/instructors/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-user-plus me-1"></i> Add Instructor</a>
             </div>
 
+            ${query.deleted === '1' ? `
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i> Instructor record and login account were successfully deleted from the database.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            ` : ''}
+
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table custom-table table-hover mb-0">
                             <thead>
-                                <tr><th>Instructor No</th><th>Full Name</th><th>Contact</th><th>License No</th><th>Expiry</th><th>Specialization</th><th>Status</th></tr>
+                                <tr><th>Instructor No</th><th>Full Name</th><th>Contact</th><th>License No</th><th>Expiry</th><th>Specialization</th><th>Status</th><th class="text-end">Actions</th></tr>
                             </thead>
                             <tbody>
                                 ${db.instructors.map(i => `
@@ -1298,6 +1464,11 @@ const server = http.createServer((req, res) => {
                                         <td>${formatDate(i.license_expiry)}</td>
                                         <td>${i.specialization}</td>
                                         <td><span class="badge bg-${i.status === 'Active' ? 'success' : 'secondary'}">${i.status}</span></td>
+                                        <td class="text-end">
+                                            ${currentUser.role === 'Administrator' ? `
+                                            <a href="/instructors/delete?id=${i.instructor_id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to permanently delete instructor ${i.full_name.replace(/'/g, "\\'")} (${i.instructor_no}) from the database?')" title="Delete Instructor"><i class="fa-solid fa-trash"></i></a>
+                                            ` : ''}
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -1309,6 +1480,33 @@ const server = http.createServer((req, res) => {
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(renderLayout('Instructors', currentUser, content, '/instructors'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: INSTRUCTORS (DELETE)
+    // -------------------------------------------------------------
+    if (pathname === '/instructors/delete') {
+        const insId = Number(query.id || 0);
+        const insIndex = db.instructors.findIndex(i => i.instructor_id === insId);
+
+        if (insIndex !== -1) {
+            const deletedIns = db.instructors.splice(insIndex, 1)[0];
+            // Unassign from schedules
+            db.lesson_schedules.forEach(ls => {
+                if (ls.instructor_id === insId) {
+                    ls.status = 'Cancelled';
+                }
+            });
+            // If linked to user, delete user
+            if (deletedIns.user_id) {
+                db.users = db.users.filter(u => u.user_id !== deletedIns.user_id);
+            }
+            saveData(db);
+        }
+
+        res.writeHead(302, { 'Location': '/instructors?deleted=1' });
+        res.end();
         return;
     }
 
@@ -1410,7 +1608,7 @@ const server = http.createServer((req, res) => {
                     <div class="table-responsive">
                         <table class="table custom-table table-hover mb-0">
                             <thead>
-                                <tr><th>Reg No</th><th>Model</th><th>Transmission</th><th>Category</th><th>Status</th></tr>
+                                <tr><th>Reg No</th><th>Model</th><th>Transmission</th><th>Category</th><th>Status</th><th class="text-end">Actions</th></tr>
                             </thead>
                             <tbody>
                                 ${db.vehicles.map(v => `
@@ -1420,6 +1618,11 @@ const server = http.createServer((req, res) => {
                                         <td><span class="badge bg-${v.transmission === 'Manual' ? 'primary' : 'info text-dark'}">${v.transmission}</span></td>
                                         <td>${v.category}</td>
                                         <td><span class="badge bg-${v.status === 'Available' ? 'success' : 'warning text-dark'}">${v.status}</span></td>
+                                        <td class="text-end">
+                                            ${currentUser.role === 'Administrator' ? `
+                                            <a href="/vehicles/delete?id=${v.vehicle_id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Permanently delete vehicle ${v.reg_no} from the database?')" title="Delete Vehicle"><i class="fa-solid fa-trash"></i></a>
+                                            ` : ''}
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -1431,6 +1634,25 @@ const server = http.createServer((req, res) => {
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(renderLayout('Fleet Vehicles', currentUser, content, '/vehicles'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: VEHICLES (DELETE)
+    // -------------------------------------------------------------
+    if (pathname === '/vehicles/delete') {
+        const vehId = Number(query.id || 0);
+        const vehIndex = db.vehicles.findIndex(v => v.vehicle_id === vehId);
+        if (vehIndex !== -1) {
+            db.vehicles.splice(vehIndex, 1);
+            // Unassign from schedules
+            db.lesson_schedules.forEach(ls => {
+                if (ls.vehicle_id === vehId) ls.vehicle_id = null;
+            });
+            saveData(db);
+        }
+        res.writeHead(302, { 'Location': '/vehicles' });
+        res.end();
         return;
     }
 
@@ -1528,7 +1750,7 @@ const server = http.createServer((req, res) => {
                     <div class="table-responsive">
                         <table class="table custom-table table-hover mb-0">
                             <thead>
-                                <tr><th>Date & Time</th><th>Student</th><th>Instructor</th><th>Vehicle</th><th>Topic</th><th>Status</th><th>Notes</th></tr>
+                                <tr><th>Date & Time</th><th>Student</th><th>Instructor</th><th>Vehicle</th><th>Topic</th><th>Status</th><th>Notes</th><th class="text-end">Actions</th></tr>
                             </thead>
                             <tbody>
                                 ${enrichedSchedules.map(s => `
@@ -1540,6 +1762,11 @@ const server = http.createServer((req, res) => {
                                         <td>${s.lesson_topic}</td>
                                         <td><span class="badge bg-primary">${s.status}</span></td>
                                         <td class="small text-muted">${s.instructor_notes || '-'}</td>
+                                        <td class="text-end">
+                                            ${currentUser.role === 'Administrator' || currentUser.role === 'Receptionist' ? `
+                                            <a href="/schedules/delete?id=${s.schedule_id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel and delete this driving lesson booking?')" title="Delete Lesson"><i class="fa-solid fa-trash"></i></a>
+                                            ` : ''}
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -1551,6 +1778,21 @@ const server = http.createServer((req, res) => {
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(renderLayout('Schedules', currentUser, content, '/schedules'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: SCHEDULES (DELETE)
+    // -------------------------------------------------------------
+    if (pathname === '/schedules/delete') {
+        const schedId = Number(query.id || 0);
+        const schedIndex = db.lesson_schedules.findIndex(ls => ls.schedule_id === schedId);
+        if (schedIndex !== -1) {
+            db.lesson_schedules.splice(schedIndex, 1);
+            saveData(db);
+        }
+        res.writeHead(302, { 'Location': '/schedules' });
+        res.end();
         return;
     }
 
@@ -2132,17 +2374,49 @@ const server = http.createServer((req, res) => {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-users-gear text-primary me-2"></i> System Users</h3>
-                    <p class="text-muted mb-0">Manage portal access credentials and roles.</p>
+                    <p class="text-muted mb-0">Manage portal access credentials, roles, and administrative deletions.</p>
                 </div>
             </div>
+
+            ${query.deleted === '1' ? `
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i> User account has been successfully deleted from the database.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            ` : ''}
+
+            ${query.error === 'self' ? `
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> Security Restriction: You cannot delete your own currently logged-in administrator account.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            ` : ''}
 
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table custom-table table-hover mb-0">
-                            <thead><tr><th>User ID</th><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+                            <thead><tr><th>User ID</th><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
                             <tbody>
-                                ${db.users.map(u => `<tr><td>#${u.user_id}</td><td class="fw-bold text-primary">${u.username}</td><td>${u.full_name}</td><td>${u.email || '-'}</td><td><span class="badge bg-primary">${u.role}</span></td><td><span class="badge bg-success">${u.status}</span></td></tr>`).join('')}
+                                ${db.users.map(u => `
+                                    <tr>
+                                        <td>#${u.user_id}</td>
+                                        <td class="fw-bold text-primary">${u.username}</td>
+                                        <td>${u.full_name}</td>
+                                        <td>${u.email || '-'}</td>
+                                        <td><span class="badge bg-primary">${u.role}</span></td>
+                                        <td><span class="badge bg-success">${u.status}</span></td>
+                                        <td class="text-end">
+                                            ${u.user_id !== currentUser.user_id ? `
+                                            <a href="/users/delete?id=${u.user_id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Permanently delete user account ${u.username} (${u.role}) from the system?')" title="Delete User">
+                                                <i class="fa-solid fa-trash me-1"></i> Delete
+                                            </a>
+                                            ` : `
+                                            <span class="badge bg-light text-muted border py-2 px-2"><i class="fa-solid fa-user-lock me-1"></i> Active Session</span>
+                                            `}
+                                        </td>
+                                    </tr>
+                                `).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -2152,6 +2426,44 @@ const server = http.createServer((req, res) => {
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(renderLayout('Users', currentUser, content, '/users'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: USERS (DELETE)
+    // -------------------------------------------------------------
+    if (pathname === '/users/delete') {
+        const targetUserId = Number(query.id || 0);
+
+        if (currentUser.role !== 'Administrator') {
+            res.writeHead(302, { 'Location': '/dashboard' });
+            res.end();
+            return;
+        }
+
+        if (targetUserId === currentUser.user_id) {
+            res.writeHead(302, { 'Location': '/users?error=self' });
+            res.end();
+            return;
+        }
+
+        const userIndex = db.users.findIndex(u => u.user_id === targetUserId);
+        if (userIndex !== -1) {
+            db.users.splice(userIndex, 1);
+
+            // Unlink any student or instructor pointing to this user
+            db.students.forEach(s => {
+                if (s.user_id === targetUserId) s.user_id = null;
+            });
+            db.instructors.forEach(i => {
+                if (i.user_id === targetUserId) i.user_id = null;
+            });
+
+            saveData(db);
+        }
+
+        res.writeHead(302, { 'Location': '/users?deleted=1' });
+        res.end();
         return;
     }
 
