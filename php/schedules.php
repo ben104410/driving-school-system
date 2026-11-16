@@ -157,23 +157,36 @@ $allInstructors = $pdo->query("SELECT instructor_id, full_name FROM instructors 
                                 </td>
                                 <td><?= htmlspecialchars($s['lesson_topic']) ?></td>
                                 <td>
-                                    <?php
-                                    $sBadge = [
-                                        'Scheduled' => 'primary',
-                                        'In Progress' => 'warning text-dark',
-                                        'Completed' => 'success',
-                                        'Cancelled' => 'danger',
-                                        'No Show' => 'secondary'
-                                    ][$s['status']] ?? 'secondary';
-                                    ?>
-                                    <span class="badge bg-<?= $sBadge ?>"><?= htmlspecialchars($s['status']) ?></span>
+                                    <?php if ($s['status'] === 'Completed'): ?>
+                                        <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> Completed</span>
+                                        <?php if (!empty($s['approved_by'])): ?>
+                                            <div class="small text-muted" style="font-size: 0.72rem;">Approved by: <?= htmlspecialchars($s['approved_by']) ?></div>
+                                        <?php endif; ?>
+                                    <?php elseif ($s['status'] === 'Cancelled'): ?>
+                                        <span class="badge bg-danger">Cancelled</span>
+                                    <?php elseif ($s['status'] === 'No Show'): ?>
+                                        <span class="badge bg-secondary">No Show</span>
+                                    <?php elseif ($s['status'] === 'In Progress'): ?>
+                                        <span class="badge bg-info text-dark">In Progress</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning text-dark"><i class="fa-regular fa-clock me-1"></i> Pending Approval</span>
+                                        <div class="small text-muted" style="font-size: 0.72rem;">(Not Approved Finished)</div>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="small text-muted" style="max-width: 180px;">
                                     <?= htmlspecialchars($s['instructor_notes'] ?? '-') ?>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="schedule_status.php?id=<?= $s['schedule_id'] ?>" class="btn btn-outline-primary" title="Update Status / Notes">
+                                        <?php
+                                        $canApprove = has_role('Administrator') || (has_role('Instructor') && isset($myInstId) && $myInstId == $s['instructor_id']);
+                                        ?>
+                                        <?php if ($canApprove && $s['status'] !== 'Completed'): ?>
+                                        <a href="schedule_status.php?id=<?= $s['schedule_id'] ?>&approve=1" class="btn btn-success" onclick="return confirm('Confirm and approve that this driving lesson is finished?')" title="Approve Finished">
+                                            <i class="fa-solid fa-check me-1"></i> Approve Finished
+                                        </a>
+                                        <?php endif; ?>
+                                        <a href="schedule_status.php?id=<?= $s['schedule_id'] ?>" class="btn btn-outline-primary" title="Update Status / Assessment Notes">
                                             <i class="fa-solid fa-list-check"></i>
                                         </a>
                                         <?php if (has_role(['Administrator', 'Receptionist'])): ?>

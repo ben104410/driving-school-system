@@ -1886,14 +1886,23 @@ const server = http.createServer((req, res) => {
             };
         });
 
+        const myInstructor = currentUser.role === 'Instructor' ? db.instructors.find(i => i.user_id === currentUser.user_id || i.email === currentUser.email || i.phone === currentUser.phone) : null;
+
         const content = `
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Practical Driving Lesson Timetable</h3>
-                    <p class="text-muted mb-0">Organized schedules with automatic double-booking conflict prevention.</p>
+                    <p class="text-muted mb-0">Lessons remain <strong>Pending</strong> until an Administrator or assigned Instructor approves that they are finished.</p>
                 </div>
                 <a href="/schedules/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-calendar-plus me-1"></i> Book Driving Lesson</a>
             </div>
+
+            ${query.approved === '1' ? `
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i> Driving lesson has been approved as finished and marked Completed!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            ` : ''}
 
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
@@ -1903,22 +1912,46 @@ const server = http.createServer((req, res) => {
                                 <tr><th>Date & Time</th><th>Student</th><th>Instructor</th><th>Vehicle</th><th>Topic</th><th>Status</th><th>Notes</th><th class="text-end">Actions</th></tr>
                             </thead>
                             <tbody>
-                                ${enrichedSchedules.map(s => `
+                                ${enrichedSchedules.map(s => {
+                                    const canApprove = (currentUser.role === 'Administrator') || (currentUser.role === 'Instructor' && myInstructor && myInstructor.instructor_id === s.instructor_id);
+                                    return `
                                     <tr>
                                         <td><strong>${formatDate(s.lesson_date)}</strong><br><small class="text-primary">${s.lesson_time.substring(0, 5)} (${s.duration_minutes}m)</small></td>
                                         <td><strong>${s.student_name}</strong><br><small class="text-muted">${s.student_reg_no}</small></td>
                                         <td>${s.instructor_name}</td>
                                         <td><span class="badge bg-light text-dark border">${s.vehicle_reg}</span></td>
                                         <td>${s.lesson_topic}</td>
-                                        <td><span class="badge bg-primary">${s.status}</span></td>
+                                        <td>
+                                            ${s.status === 'Completed' ? `
+                                                <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> Completed</span>
+                                                ${s.approved_by ? `<div class="small text-muted" style="font-size: 0.72rem;">Approved by: ${s.approved_by}</div>` : ''}
+                                            ` : s.status === 'Cancelled' ? `
+                                                <span class="badge bg-danger">Cancelled</span>
+                                            ` : s.status === 'No Show' ? `
+                                                <span class="badge bg-secondary">No Show</span>
+                                            ` : s.status === 'In Progress' ? `
+                                                <span class="badge bg-info text-dark">In Progress</span>
+                                            ` : `
+                                                <span class="badge bg-warning text-dark"><i class="fa-regular fa-clock me-1"></i> Pending Approval</span>
+                                                <div class="small text-muted" style="font-size: 0.72rem;">(Not Approved Finished)</div>
+                                            `}
+                                        </td>
                                         <td class="small text-muted">${s.instructor_notes || '-'}</td>
                                         <td class="text-end">
-                                            ${currentUser.role === 'Administrator' || currentUser.role === 'Receptionist' ? `
-                                            <a href="/schedules/delete?id=${s.schedule_id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel and delete this driving lesson booking?')" title="Delete Lesson"><i class="fa-solid fa-trash"></i></a>
-                                            ` : ''}
+                                            <div class="btn-group btn-group-sm">
+                                                ${canApprove && s.status !== 'Completed' ? `
+                                                <a href="/schedules/approve?id=${s.schedule_id}" class="btn btn-success" onclick="return confirm('Approve that this driving lesson is finished?')" title="Approve Finished">
+                                                    <i class="fa-solid fa-check me-1"></i> Approve Finished
+                                                </a>
+                                                ` : ''}
+                                                ${currentUser.role === 'Administrator' || currentUser.role === 'Receptionist' ? `
+                                                <a href="/schedules/delete?id=${s.schedule_id}" class="btn btn-outline-danger" onclick="return confirm('Cancel and delete this driving lesson booking?')" title="Delete Lesson"><i class="fa-solid fa-trash"></i></a>
+                                                ` : ''}
+                                            </div>
                                         </td>
                                     </tr>
-                                `).join('')}
+                                    `;
+                                }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -1929,6 +1962,37 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(renderLayout('Schedules', currentUser, content, '/schedules'));
         return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: SCHEDULES (APPROVE FINISHED)
+    // -------------------------------------------------------------
+    if (pathname === '/schedules/approve') {
+        const schedId = Number(query.id || 0);
+        const sched = db.lesson_schedules.find(ls => ls.schedule_id === schedId);
+
+        if (!sched) {
+            res.writeHead(302, { 'Location': '/schedules' });
+            res.end();
+            return;
+        }
+
+        const myInstructor = currentUser.role === 'Instructor' ? db.instructors.find(i => i.user_id === currentUser.user_id || i.email === currentUser.email || i.phone === currentUser.phone) : null;
+        const canApprove = (currentUser.role === 'Administrator') || (currentUser.role === 'Instructor' && myInstructor && myInstructor.instructor_id === sched.instructor_id);
+
+        if (canApprove) {
+            sched.status = 'Completed';
+            sched.approved_by = `${currentUser.full_name} (${currentUser.role})`;
+            sched.approved_at = new Date().toISOString();
+            saveData(db);
+            res.writeHead(302, { 'Location': '/schedules?approved=1' });
+            res.end();
+            return;
+        } else {
+            res.writeHead(302, { 'Location': '/schedules' });
+            res.end();
+            return;
+        }
     }
 
     // -------------------------------------------------------------
@@ -2048,7 +2112,9 @@ const server = http.createServer((req, res) => {
                     lesson_date: lessonDate,
                     lesson_time: lessonTime,
                     duration_minutes: Number(body.duration_minutes || 60),
-                    status: 'Scheduled',
+                    status: 'Pending',
+                    approved_by: null,
+                    approved_at: null,
                     instructor_notes: body.instructor_notes || ''
                 });
                 saveData(db);

@@ -84,13 +84,17 @@ The system implements the **Three-Tier Architecture** documented in Section 4.6 
 - Photo gallery thumbnails displayed directly in the fleet management table, with graceful fallback vehicle icons when no picture is uploaded.
 - Registration plate, vehicle model, transmission (Manual / Automatic), and operational status (`Available`, `In Use`, `Maintenance`).
 
-### E. Practical Lesson Scheduling with Conflict Detection
+### E. Practical Lesson Scheduling with Conflict Detection & Completion Approval
 - Explicitly addresses the **12% scheduling conflict** problem identified in the manual system.
 - Before confirming any booking, the system verifies:
   1. Instructor is not already booked for another lesson at that same date and overlapping time window.
   2. Training vehicle is not assigned to another ongoing lesson.
   3. Student does not have another booking at that time.
-- Status tracking: `Scheduled`, `In Progress`, `Completed`, `Cancelled`, `No Show`.
+- **Lesson Completion Approval Rule:** All scheduled driving lessons enter the system with status **`Pending`** (Awaiting completion approval).
+- **Strict Approval Enforcement:** If neither an **Administrator** nor the assigned **Instructor** explicitly approves that a lesson has been finished, its status **strictly remains `Pending`** (displayed with a warning badge: `Pending Approval - Not Approved Finished`).
+- **One-Click Approval:** An Administrator or the assigned Instructor can approve a lesson as finished with one click, which updates its status to **`Completed`** and records the approver's identity and timestamp (`approved_by`, `approved_at`).
+- Other roles (Students and Receptionists) cannot approve lesson completion.
+- Status tracking: `Pending`, `In Progress`, `Completed`, `Cancelled`, `No Show`.
 - Instructor feedback notes recording student vehicle handling, clutch control, mirror checks, and lane discipline.
 
 ### F. Tuition Payments & Official Receipt Generation

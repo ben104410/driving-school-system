@@ -240,8 +240,9 @@ if ($role === 'Student') {
                                         <td>
                                             <?php
                                             $stClass = [
+                                                'Pending' => 'warning text-dark',
                                                 'Scheduled' => 'primary',
-                                                'In Progress' => 'warning text-dark',
+                                                'In Progress' => 'info text-dark',
                                                 'Completed' => 'success',
                                                 'Cancelled' => 'danger',
                                                 'No Show' => 'secondary'

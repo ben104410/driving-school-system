@@ -105,7 +105,9 @@ CREATE TABLE `lesson_schedules` (
   `lesson_date` DATE NOT NULL,
   `lesson_time` TIME NOT NULL,
   `duration_minutes` INT(11) NOT NULL DEFAULT 60,
-  `status` ENUM('Scheduled', 'In Progress', 'Completed', 'Cancelled', 'No Show') NOT NULL DEFAULT 'Scheduled',
+  `status` ENUM('Pending', 'In Progress', 'Completed', 'Cancelled', 'No Show') NOT NULL DEFAULT 'Pending',
+  `approved_by` VARCHAR(100) DEFAULT NULL,
+  `approved_at` DATETIME DEFAULT NULL,
   `instructor_notes` TEXT DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`schedule_id`),
@@ -187,12 +189,12 @@ INSERT INTO `students` (`student_id`, `user_id`, `student_reg_no`, `full_name`, 
 (4, NULL, 'AA/MBA/2026/004', 'Grace Moraa', 'Female', '1998-08-25', '+254733123456', 'grace.moraa@outlook.com', '34198273', 'Changamwe, Mombasa', 'Category B (Light Vehicle - Manual)', 15000.00, '2026-09-15', 'Completed'),
 (5, NULL, 'AA/MBA/2026/005', 'Ahmed Juma', 'Male', '2003-01-30', '+254788112233', 'ahmed.juma@gmail.com', '39120485', 'Mtwapa, Mombasa', 'Category B (Light Vehicle - Manual)', 15000.00, '2026-11-02', 'Enrolled');
 
-INSERT INTO `lesson_schedules` (`schedule_id`, `student_id`, `instructor_id`, `vehicle_id`, `lesson_topic`, `lesson_date`, `lesson_time`, `duration_minutes`, `status`, `instructor_notes`) VALUES
-(1, 1, 1, 1, 'Clutch Control & Hill Starts', '2026-11-17', '09:00:00', 60, 'Scheduled', 'Focus on smooth biting point control along Nyali slopes.'),
-(2, 2, 2, 2, 'Three-point Turn & Parallel Parking', '2026-11-17', '10:30:00', 60, 'Scheduled', 'Practicing reverse bay parking at Mombasa showground area.'),
-(3, 3, 2, 4, 'Emergency Braking & Slalom Maneuver', '2026-11-18', '08:30:00', 60, 'Scheduled', 'Pre-test motorcycle maneuver assessment.'),
-(4, 1, 1, 1, 'Basic Steering & Gear Selection', '2026-11-12', '09:00:00', 60, 'Completed', 'Student demonstrated good mirror checks and gear shifting.'),
-(5, 4, 3, 1, 'Pre-Test Driving Assessment Mock', '2026-10-28', '11:00:00', 60, 'Completed', 'Passed mock exam with high confidence. Ready for NTSA test.');
+INSERT INTO `lesson_schedules` (`schedule_id`, `student_id`, `instructor_id`, `vehicle_id`, `lesson_topic`, `lesson_date`, `lesson_time`, `duration_minutes`, `status`, `approved_by`, `approved_at`, `instructor_notes`) VALUES
+(1, 1, 1, 1, 'Clutch Control & Hill Starts', '2026-11-17', '09:00:00', 60, 'Pending', NULL, NULL, 'Focus on smooth biting point control along Nyali slopes.'),
+(2, 2, 2, 2, 'Three-point Turn & Parallel Parking', '2026-11-17', '10:30:00', 60, 'Pending', NULL, NULL, 'Practicing reverse bay parking at Mombasa showground area.'),
+(3, 3, 2, 4, 'Emergency Braking & Slalom Maneuver', '2026-11-18', '08:30:00', 60, 'Pending', NULL, NULL, 'Pre-test motorcycle maneuver assessment.'),
+(4, 1, 1, 1, 'Basic Steering & Gear Selection', '2026-11-12', '09:00:00', 60, 'Completed', 'David Ochieng (Instructor)', '2026-11-12 10:05:00', 'Student demonstrated good mirror checks and gear shifting.'),
+(5, 4, 3, 1, 'Pre-Test Driving Assessment Mock', '2026-10-28', '11:00:00', 60, 'Completed', 'Amina Bakari (Instructor)', '2026-10-28 12:10:00', 'Passed mock exam with high confidence. Ready for NTSA test.');
 
 INSERT INTO `payments` (`payment_id`, `receipt_no`, `student_id`, `amount`, `payment_date`, `payment_method`, `reference_no`, `notes`, `recorded_by`) VALUES
 (1, 'RCT-2026-001', 1, 10000.00, '2026-10-01', 'M-Pesa', 'QA189KL93Z', 'First installment for Class B Manual', 2),

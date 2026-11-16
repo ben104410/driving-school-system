@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmtIns = $pdo->prepare("
                     INSERT INTO lesson_schedules (student_id, instructor_id, vehicle_id, lesson_topic, lesson_date, lesson_time, duration_minutes, status, instructor_notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'Scheduled', ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
                 ");
                 $stmtIns->execute([$student_id, $instructor_id, $vehicle_id, $lesson_topic, $lesson_date, $lesson_time, $duration, $notes]);
 
-                set_flash('success', 'Driving lesson booked successfully with no conflicts detected!');
+                set_flash('success', 'Driving lesson booked successfully! Status set to Pending until approved as finished by an Administrator or Instructor.');
                 redirect('schedules.php');
             } catch (Exception $e) {
                 $error = 'Error booking lesson: ' . $e->getMessage();

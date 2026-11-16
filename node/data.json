@@ -69,6 +69,16 @@
       "phone": "+254799887766",
       "role": "Student",
       "status": "Active"
+    },
+    {
+      "user_id": 8,
+      "username": "benjah",
+      "password": "@benjah19",
+      "full_name": "Benjamin mwasya",
+      "email": "bentitus10@gmail.com",
+      "phone": "+254795317428",
+      "role": "Administrator",
+      "status": "Active"
     }
   ],
   "instructors": [
@@ -306,8 +316,10 @@
       "lesson_date": "2026-11-17",
       "lesson_time": "09:00:00",
       "duration_minutes": 60,
-      "status": "Scheduled",
-      "instructor_notes": "Focus on smooth biting point control along Nyali slopes."
+      "status": "Completed",
+      "approved_by": "Administrator (Cynthia Jeruto) (Administrator)",
+      "instructor_notes": "Focus on smooth biting point control along Nyali slopes.",
+      "approved_at": "2026-11-16T13:40:39.351Z"
     },
     {
       "schedule_id": 2,
@@ -318,8 +330,10 @@
       "lesson_date": "2026-11-17",
       "lesson_time": "10:30:00",
       "duration_minutes": 60,
-      "status": "Scheduled",
-      "instructor_notes": "Practicing reverse bay parking at Mombasa showground area."
+      "status": "Completed",
+      "approved_by": "Benjamin mwasya (Administrator)",
+      "instructor_notes": "Practicing reverse bay parking at Mombasa showground area.",
+      "approved_at": "2026-11-16T13:41:13.434Z"
     },
     {
       "schedule_id": 3,
@@ -330,7 +344,8 @@
       "lesson_date": "2026-11-18",
       "lesson_time": "08:30:00",
       "duration_minutes": 60,
-      "status": "Scheduled",
+      "status": "Pending",
+      "approved_by": null,
       "instructor_notes": "Pre-test motorcycle maneuver assessment."
     },
     {
@@ -343,6 +358,7 @@
       "lesson_time": "09:00:00",
       "duration_minutes": 60,
       "status": "Completed",
+      "approved_by": "David Ochieng (Instructor)",
       "instructor_notes": "Student demonstrated good mirror checks and gear shifting."
     },
     {
@@ -355,6 +371,7 @@
       "lesson_time": "11:00:00",
       "duration_minutes": 60,
       "status": "Completed",
+      "approved_by": "Amina Bakari (Instructor)",
       "instructor_notes": "Passed mock exam with high confidence. Ready for NTSA test."
     },
     {
