@@ -1,0 +1,949 @@
+ONLINE DRIVING SCHOOL MANAGEMENT SYSTEM
+
+(CASE STUDY OF AA DRIVING AT MOMBASA)
+
+CYNTHIA JERUTO
+
+A RESEARCH PROPOSAL SUMMITTED TO THE DEPARTMENT OF INFORMATION TECHNOLOGY IN THE SCHOOL OF COMPUTING AND INFORMATICS IN PARTIAL FULFILMENT OF THE REQUIREMENTS OF THE AWARD OF DIPLOMA IN BUSINESS INFORMATION TECHNOLOGY AT KENYA METHODIST UNIVERSITY.
+
+JULY ,2026
+
+DECLARATION
+
+I declare that this project report titled “driving school management system” is my original work and has not been submitted to any other institution for academic award. The work. Presented was carried out by me under supervision and guidance of my project supervisor.
+
+Student Name: Cynthia Jeruto
+
+Signature: __________________
+
+Date: ______________________
+
+Supervisor Name: Gabriel Muchangi
+
+Signature: __________________
+
+Date: ______________________
+
+DEDICATION
+
+I dedicate this project to my parents, family members, friends, and lecturers for their support, encouragement, and guidance throughout my studies. Their guidance, motivation, and support have contributed greatly to the successful completion of this project.
+
+ACKNOWLEDGEMENT
+
+I thank Almighty God for giving me strength knowledge, and determination throughout my studies. I also appreciate my supervisor for the guidance, advice, and support offered during this research. Special thanks go to my lecturers for providing the necessary skills and knowledge in information system. Finally, I appreciate my family and classmates for their encouragement and support during the entire project period.
+
+ABSTRACT
+
+The purpose of this project was to develop a Driving School Management System that improves the management of driving school activities and records. Many driving schools experience challenges when using manual systems, such as difficulties in registering students, scheduling driving lessons, managing instructor records, tracking payments, and preparing reports.
+
+The developed system provides a computerized platform that allows driving school administrators to register students, manage instructor information, schedule driving lessons, record payments, monitor student progress, and generate reports efficiently. The system reduces paperwork, improves data accuracy, enhances information security, and allows faster access to important driving school records.The system was developed using web-based technologies including PHP, MySQL, HTML, CSS, and JavaScript. The development process involved system analysis, system design, implementation, testing, and evaluation. The completed system provides an affordable, user-friendly, and reliable solution that supports effective driving school management and better decision-making.
+
+Table of Contents
+
+DECLARATIONii
+
+DEDICATIONiii
+
+ACKNOWLEDGEMENTiv
+
+ABSTRACTv
+
+CHAPTER ONE: INTRODUCTION1
+
+1.1Background of the Study1
+
+1.3 Objective of the study2
+
+1.3.1General Objective2
+
+1.3.2 Specific Objectives3
+
+1.4 Research question3
+
+1.5 Justification of the study3
+
+1.6 Justification of the Study4
+
+1.6 Scope of the Study6
+
+2.1 Introduction8
+
+2.2 Theoretical review8
+
+2.2.1 Systems Theory8
+
+2.2.2 Technology Acceptance Model (TAM)9
+
+2.2.3 Information Systems Success Model9
+
+CHAPTER THREE: RESEARCH METHODOLOGY11
+
+3.1 Introduction11
+
+3.2 Research Design11
+
+3.5 Data Collection Methods11
+
+I.Questionnaires: Questionnaires were given to students and instructors. They contained simple questions about the current system, the challenges they face, and the features they would like in the proposed Online Driving School Management System.12
+
+II.Interviews:  Interviews were conducted with the driving school administrator. The interviews helped the researcher collect detailed information about student registration, lesson scheduling, payments, and report preparation.12
+
+III.Observation:  The researcher observed how daily activities were carried out in the driving school. This helped to understand how the current manual system worked and to identify the problems that the new system should solve.12
+
+3.6 System Development Methodology (Rapid Application Development Model)12
+
+3.6.1 Requirements Planning12
+
+3.6.2 User Design14
+
+3.6.3 Construction15
+
+3.6.4 Cutover16
+
+3.9 Chapter Summary17
+
+CHAPTER FOUR: SYSTEM ANALYSIS AND DESIGN18
+
+4.1 Introduction18
+
+4.1.1 Systems Development Methodology18
+
+4.2Feasibility Study18
+
+4.2.1Technical Feasibility18
+
+4.2.2Economic Feasibility19
+
+The project required minimal financial resources because open-source software tools were used. Therefore, development costs were low.19
+
+4.2.3Operational Feasibility19
+
+4.2.4Schedule Feasibility19
+
+4.3 Data and System Analysis19
+
+4.4 System Specification.21
+
+Table 4.4.2Software Requirements22
+
+4.4.3Functional Requirements22
+
+4.4.4Non-Functional Requirements23
+
+4.5 System Design23
+
+4.5.1 Logical Design23
+
+4.5.2 Physical Design24
+
+4.6 System Architecture24
+
+4.6.2Application Layer25
+
+4.7.1 Use Case Diagram26
+
+4.7.2 System Flowchart27
+
+4.8 Database Design29
+
+CHAPTER ONE: INTRODUCTION
+
+1.1Background of the Study
+
+Information and Communication Technology (ICT) will continue to transform how organizations manage information and deliver services in both public and private (Laudon &Laudon,2022,) Stair & (Stair, 2023) (M.Marakas, 2011)). Many organizations will increasingly adopt computerized information systems because they will be faster, more accurate, more reliable, and more secure compared to manual systems ( (sommerville, 2016) (E.Kendall, 2019)Turban et al., 2018). According to (Laudon, 2022)information systems will support organizations in collecting, processing, storing, and distributing information to improve operational efficiency and decision-making processes. Similarly, (w.Reynolds, 2023)emphasize that information systems will enhance productivity by integrating data and automating routine tasks across organizational departments.
+
+Driving schools will also adopt computerized systems to improve their operations and service delivery ( (Efraim Turban Carol Pollard, 2023); (E.Kendall, 2019)As the number of students increases, it will become increasingly difficult to manage student registration, instructor records, driving lesson schedules, payments, and test results using manual or paper-based systems ( (sommerville, 2016) (Maxim R. s., 2020)). Manual record-keeping systems will often lead to inefficiencies such as data redundancy, loss of records, delayed retrieval of information, and human errors in data entry ( (Laudon, 2022); (M.Marakas, 2011)). A Driving School Online Management System will therefore be necessary to centralize and automate these processes, ensuring improved accuracy and efficiency ( (Stair, 2023), 2023; (Efraim Turban Carol Pollard, 2023)
+
+A Driving School Online Management System will be a web-based or computerized application designed to support the management of daily activities within driving schools ( (E.Kendall, 2019), 2019; (sommerville, 2016)The system will allow administrative staff to register students, assign instructors, schedule driving lessons, record payments, track student progress, manage driving test results, and generate reports ( (M.Marakas, 2011); (Stair, 2023)By automating these functions, the system will reduce paperwork, improve data accuracy, and enhance operational efficiency ( (Efraim Turban Carol Pollard, 2023); (M.Marakas, 2011; M.Marakas, 2011)According to (sommerville, 2016)), computerized systems will significantly improve data storage, processing speed, and information retrieval compared to traditional manual systems.
+
+Traditionally, many driving schools will continue to rely on paper-based systems and physical record books to manage student and operational; (Maxim P. a., 2020; Maxim R. s., 2020). However, as the volume of data increases, these manual systems will become inefficient and difficult to maintain ( (Laudon, 2022); (Stair, 2023)). Problems such as misplaced files, duplication of records, slow access to information, and inconsistencies in data will become more common ( (sommerville, 2016); (M.Marakas, 2011)). These challenges will negatively affect service delivery and decision-making within driving schools (Turban et al., 2018).
+
+Many driving schools globally will increasingly adopt online management systems to improve efficiency, communication, and service delivery (Laudon & Laudon, 2022; Stair & Reynolds, 2023; Turban et al., 2018). These systems will enable staff to access real-time information, improve coordination between instructors and students, and simplify the management of lessons and driving tests ( (E.Kendall, 2019); (sommerville, 2016)In developing countries such as Kenya, however, some driving schools will still rely on manual systems, which will limit their ability to manage large volumes of data effectively ( (M.Marakas, 2011); (Laudon, 2022)Therefore, a Driving School Online Management System will provide a more efficient and reliable solution by storing all data in a centralized database that can be securely accessed, updated, and managed in real time ( (Stair, 2023) (Efraim Turban Carol Pollard, 2023)).
+
+The proposed Driving School Online Management System will improve operational efficiency, enhance data security, reduce redundancy, and support effective decision-making in driving school management ( (Laudon, 2022); (Laudon, 2022); (Stair, 2023); (E.Kendall, 2019)).
+
+1.3 Objective of the study
+
+1.3.1General Objective
+
+The main objective of this study is to develop a Driving School Online Management System at AA driving school at Mombasa.
+
+1.3.2 Specific Objectives
+
+To develop an online driving school management system at AA driving school at Mombasa.
+
+To analyze an online Driving School Management System at AA driving school at Mombasa.
+
+To code an online driving school management system at AA driving school at Mombasa.
+
+To test an online driving school management system at AA driving school at Mombasa.
+
+1.4 Research question
+
+How can an online system improve the student registration process in a driving school?
+
+How can an online system improve the scheduling and management of driving lessons?
+
+How can instructor and vehicle information be managed more efficiently using an online system?
+
+How can an online system improve the management of student fee payments?
+
+How can the system generate accurate and timely reports for effective decision-making?
+
+1.5 Justification of the study
+
+The need for an Online Driving School Management System has increased because many driving schools still use manual methods to manage their daily operations. These methods are often slow, time-consuming, and prone to errors such as loss of records, duplication of data, and delays in retrieving information. As the number of students continues to increase, manual record keeping becomes less effective and more difficult to manage. According to (al., 2023)computerized driving school management systems can help reduce administrative workload by automating activities such as student registration, scheduling, instructor management, attendance, vehicle management, and payment transactions.
+
+This study is justified because it proposes a computerized system that will automate key activities such as student registration, lesson scheduling, instructor and vehicle management, payment processing, and report generation. The use of computerized information systems can improve the speed, accuracy, accessibility, and reliability of organizational information (R.Kelly Rainer Jr., 2021)In addition (S.Kumaran, 2024)) demonstrated that a web-based driving school management system can support activities such as online registration, scheduling, payment management, student records, instructor management, and report generation.
+
+The proposed system is expected to improve efficiency, accuracy, and security of information while reducing paperwork and operational costs. Proper information management is important because organizations depend on accurate and timely information when making decisions and delivering services (T.Bourgeois, 2021)). The system will also help reduce the problems associated with manual records, including misplaced documents, repeated data entry, and difficulties in retrieving information. Furthermore, computerized records can make information easier to update, organize, and retrieve when required.
+
+The system will also enhance communication between the driving school and students by providing online access to services and information. Online systems allow users to access information and services more conveniently without always having to visit an organization physically. According to (Baltzan, 2022)information technology can support communication, improve business processes, and provide organizations with better ways of delivering services to users. Therefore, an online driving school management system can make it easier for students to access registration information, lesson schedules, payment details, and other important services.
+
+Furthermore, the development of this system is important in the Kenyan driving-school environment because driving schools are required to maintain records relating to their operations, instructors, vehicles, learners, attendance, and driving examinations.
+
+1.6 Justification of the Study
+
+The need for an Online Driving School Management System has increased because many driving schools still use manual methods to manage their daily operations. These methods are often slow, time-consuming, and prone to errors such as loss of records, duplication of data, and delays in retrieving information. As the number of students continues to increase, manual record keeping becomes less effective and more difficult to manage. According to (al., 2023)computerized driving school management systems can help reduce administrative workload by automating activities such as student registration, scheduling, instructor management, attendance, vehicle management, and payment transactions.
+
+This study is justified because it proposes a computerized system that will automate key activities such as student registration, lesson scheduling, instructor and vehicle management, payment processing, and report generation. The use of computerized information systems can improve the speed, accuracy, accessibility, and reliability of organizational information (R.Kelly Rainer Jr., 2021)In addition, (S.Kumaran, 2024)demonstrated that a web-based driving school management system can support activities such as online registration, scheduling, payment management, student records, instructor management, and report generation.
+
+The proposed system is expected to improve efficiency, accuracy, and security of information while reducing paperwork and operational costs. Proper information management is important because organizations depend on accurate and timely information when making decisions and delivering services ( (T.Bourgeois, 2021)The system will also help reduce the problems associated with manual records, including misplaced documents, repeated data entry, and difficulties in retrieving information. Furthermore, computerized records can make information easier to update, organize, and retrieve when required.
+
+The system will also enhance communication between the driving school and students by providing online access to services and information. Online systems allow users to access information and services more conveniently without always having to visit an organization physically. According to (Baltzan, 2022)), information technology can support communication, improve business processes, and provide organizations with better ways of delivering services to users. Therefore, an online driving school management system can make it easier for students to access registration information, lesson schedules, payment details, and other important services.
+
+Furthermore, the development of this system is important in the Kenyan driving-school environment because driving schools are required to maintain records relating to their operations, instructors, vehicles, learners, attendance, and driving examinations. The Traffic (Driving Schools, Driving Instructors and Driving Licences) Rules, 2020 provide requirements concerning the maintenance of driving-school records and reports (Kenya Law, 2020). A computerized system can therefore provide a more organized method of storing, updating, and retrieving these records.
+
+The findings of this study will provide useful knowledge for driving school owners, system developers, researchers, and students interested in developing similar management information systems. The study will demonstrate how information technology can be applied to solve real-life management problems and improve the quality-of-service delivery in driving schools. Similar studies have shown that technology-based management systems can improve the organization and accessibility of information in driving schools ( (S.Kumaran, 2024)The project will therefore provide a useful basis for future researchers and developers who may wish to improve or expand online driving school management systems.
+
+The findings of this study will provide useful knowledge for driving school owners, system developers, researchers, and students interested in developing similar management information systems. The study will demonstrate how information technology can be applied to solve real-life management problems and improve the quality-of-service delivery in driving schools. Similar studies have shown that technology-based management systems can improve the organization and accessibility of information in driving schools ( (S.Kumaran, 2024)The project will therefore provide a useful basis for future researchers and developers who may wish to improve or expand online driving school management systems.
+
+1.6 Scope of the Study
+
+This study focuses on the design and development of an Online Driving School Management System to improve the management of driving school operations. The system will provide an online platform for managing key activities such as student registration, lesson scheduling, instructor management, vehicle management, payment processing, student progress tracking, and report generation.
+
+The study will be conducted in a selected driving school as a case study. It will involve the collection of information from the driving school management, instructors, administrative staff, and students to identify the challenges of the existing manual system and determine the requirements for the proposed online system.
+
+The proposed system will be limited to the internal operations of the driving school. It will Snot include services such as government driving test administration, driving license issuance, or integration with external government agencies. The study will concentrate on improving the efficiency, accuracy, security, and accessibility of information within the driving school with modern information technology.
+
+CHAPTER TWO: LITERATURE REVIEW
+
+2.1 Introduction
+
+This chapter reviews literature related to the Online Driving School Management System at AA Driving School, Mombasa. It presents the concept of an online driving school management system, theoretical review, empirical review, research gap, and chapter summary. The purpose of this chapter is to provide a better understanding of previous studies and theories related to the study and to identify gaps that justify the development of the proposed system. Previous research indicates that web-based driving school management systems can improve data management, reduce duplication of records, and make it easier to retrieve student and instructor information (Mostafa, 2022)
+
+2.2 Theoretical review
+
+2.2.1 Systems Theory
+
+The study is guided by Systems Theory, which explains that an organization or system consists of different interconnected components that work together to achieve a common goal. (Bayat, 2023)explain that systems thinking helps organizations understand the interdependencies, interconnections, and relationships between different elements within a system. Similarly, (Tackle, 2024)explain that systems theory provides a way of understanding organizations by considering the relationships between their different components and the wider environment.
+
+In a driving school, activities such as student registration, instructor management, lesson scheduling, fee payment, student progress tracking, and report generation are interconnected. An Online Driving School Management System integrates these activities into one computerized system. Information from one activity can be used by another activity, making coordination between different functions important. The integration of these activities can improve communication, minimize errors, increase efficiency, and support better decision-making. Therefore, Systems Theory is relevant to this study because it views AA Driving School, Mombasa as a complete system whose different components and activities need to work together effectively (Bayat, 2023; Bayat, 2023)&, 2023; (Tackle, 2024)
+
+2.2.2 Technology Acceptance Model (TAM)
+
+The Technology Acceptance Model (TAM) explains how users accept and use new information systems. The model emphasizes two important factors: perceived usefulness and perceived ease of use. Perceived usefulness refers to the extent to which a person believes that using a system will improve their performance, while perceived ease of use refers to the extent to which a person believes that using the system will require little effort. Recent studies continue to support the importance of these factors in technology adoption. (R.Hanani, 2025)found that perceived usefulness and perceived ease of use significantly influence users' intention to use digital applications. Similarly, (Alberto Ortiz-Lopez, 2024)examined technology acceptance in an educational context and found that perceived usefulness is an important factor in users' acceptance and use of digital technologies.
+
+In this study, administrators, instructors, and students will use the Online Driving School Management System. If the system is simple to operate and helps users complete their tasks faster, they are more likely to adopt it. Therefore, the system should have a user-friendly interface, simple navigation, and reliable performance. The perceived usefulness and ease of use of the proposed system will be important in encouraging users at AA Driving School, Mombasa to accept and use the system effectively ( (R.Hanani, 2025) (Alberto Ortiz-Lopez, 2024))
+
+2.2.3 Information Systems Success Model
+
+The DeLone and McLean Information Systems Success Model explains how the success of an information system can be evaluated using factors such as system quality, information quality, service quality, system use, user satisfaction, and net benefits. Recent research continues to demonstrate the usefulness of the model in evaluating different types of information systems. (A.A.Alhitty, 2023)applied the model to online learning and emphasized the importance of system, information, and service quality in determining system success. Similarly, (Tutut Widyaningrum, 2024)used the model to examine user satisfaction with a learning management system. (Saba, 2025)further highlighted that the core dimensions of the DeLone and McLean model remain relevant for evaluating information system effectiveness in modern technological environments.
+
+For the Online Driving School Management System, the system should provide accurate information, operate reliably, be secure, and meet users' needs. The system should also provide quality services and satisfy administrators, instructors, and students. When these factors are achieved, users are more likely to use the system effectively, while the organization can benefit through improved service delivery, faster information retrieval, reduced paperwork, and efficient management ( (A.A.Alhitty, 2023); (Tutut Widyaningrum, 2024)24; (Saba, 2025)
+
+CHAPTER THREE: RESEARCH METHODOLOGY
+
+3.1 Introduction
+
+This chapter explains the methods used to carry out the study and develop the proposed Online Driving School Management System at AA Driving School, Mombasa. It describes the research design and data collection methods used to understand the existing system and identify its requirements. The chapter also explains the system development methodology adopted for the project, which guided the design, development, testing, and implementation of the proposed system. It further presents the system requirements, system design tools, development tools and technologies, system testing and validation methods, and ethical considerations. These methods provided a foundation for developing a system that addresses the challenges of the existing manual processes.
+
+3.2 Research Design
+
+This chapter explains the methods used to carry out the study and develop the proposed Online Driving School Management System at AA Driving School, Mombasa. It describes the research design and data collection methods used to understand the existing system and identify its requirements. The chapter also explains the system development methodology adopted for the project, which guided the design, development, testing, and implementation of the proposed system (Maxim R. S., 2020)further presents the system requirements, system design tools, development tools and technologies, system testing and validation methods, and ethical considerations. These methods provided a foundation for developing a system that addresses the challenges of the existing manual processes.
+
+3.5 Data Collection Methods
+
+Data collection methods are the ways used to gather information for the study. In this study, the researcher used questionnaires, interviews, and observation to collect data.
+
+Questionnaires: Questionnaires were given to students and instructors. They contained simple questions about the current system, the challenges they face, and the features they would like in the proposed Online Driving School Management System.
+
+Interviews:  Interviews were conducted with the driving school administrator. The interviews helped the researcher collect detailed information about student registration, lesson scheduling, payments, and report preparation.
+
+Observation:  The researcher observed how daily activities were carried out in the driving school. This helped to understand how the current manual system worked and to identify the problems that the new system should solve.
+
+3.6 System Development Methodology (Rapid Application Development Model)
+
+This study adopted the Rapid Application Development (RAD) Model. RAD is a systems development approach that emphasizes rapid prototyping, user involvement, and continuous improvement during system development (E.Kendall, 2019)). The approach allows developers to create prototypes, obtain user feedback, and make improvements before the final system is implemented. RAD also supports an iterative development process in which system requirements and designs can be reviewed and refined throughout the development process (Rosenblatt, 2019)The RAD model was suitable for this study because it allowed the researcher to develop the proposed Online Driving School Management System in stages. It also provided an opportunity to identify problems, make improvements, and ensure that the system addressed the requirements of AA Driving School. The RAD model used in this study consisted of four main phases: Requirements Planning, User Design, Construction, and Cutover.
+
+3.6.1 Requirements Planning
+
+In this phase, the researcher met with the driving school administrator, instructors, and students to gather information about the existing system. The researcher identified the challenges of the manual system and collected the requirements needed for the proposed Online Driving School Management System at AA Driving School, Mombasa. Information was collected through interviews, questionnaires, observation, and review of existing records. The requirements identified included student registration, instructor management, lesson scheduling, vehicle management, fee payment, student progress tracking, and report generation.
+
+Figure 3.1: Requirements Planning Phase of RAD Methodology
+
+The requirements planning phase provided a clear understanding of the problems in the existing system and the needs of the users. The information collected during this phase was used as a basis for designing the proposed system.
+
+3.6.2 User Design
+
+In this phase, the researcher designed the proposed system together with the users. Simple prototypes of important system interfaces, such as student registration forms, payment forms, lesson scheduling pages, student progress pages, and report pages, were created. The administrator, instructors, and students were given an opportunity to review the prototypes and provide their opinions and suggestions. The researcher used the feedback obtained from the users to modify and improve the designs. This process was repeated until the proposed system design met the users' requirement and expectation.
+
+Figure 3.2: User Design Phase of RAD Methodology.
+
+Figure 3.2: User Design Phase of RAD Methodology.
+
+The user design phase helped to ensure that the proposed Online Driving School Management System was easy to use and met the needs of administrators, instructors, and students at AA Driving School, Mombasa.
+
+3.6.3 Construction
+
+During this phase, the actual system was developed. The researcher created the database, designed the user interfaces, and wrote the program using PHP, MySQL, and XAMPP. The system was tested regularly, and any errors found were corrected before moving to the next phase.
+
+Figure 3.1: Construction Phase of RAD Methodology
+
+The Construction Phase involved the actual development of the Online Driving School Management System. During this phase, the researcher created the MySQL database, designed the user interfaces, and developed the system using PHP. XAMPP was used to provide the local server environment for running and testing the system. The system was tested regularly to identify and correct errors. After all, identified errors were corrected and the system was working properly, it was prepared for the next phase of the RAD methodology.
+
+3.6.4 Cutover
+
+The Cutover Phase involved putting the completed Online Driving School Management System into actual use. The system was installed, users were trained, data was transferred, and final testing was carried out to ensure that the system worked correctly.
+
+Figure 3.2: Cutover Phase of RAD Methodology
+
+The Cutover Phase involved installing the completed system, transferring data, training users, and conducting final testing. After successful testing, the system was put into actual use and monitored to ensure smooth operation.
+
+3.9 Chapter Summary
+
+This chapter explained the research methods used in the study. It described the research design, target population, sampling techniques and sample size, data collection methods, data collection instruments, data analysis methods, and the Rapid Application Development (RAD) model used to develop the proposed Online Driving School Management System at AA driving school at Mombasa. The next chapter presents the system analysis and design.
+
+CHAPTER FOUR: SYSTEM ANALYSIS AND DESIGN
+
+4.1 Introduction
+
+This chapter presents the system analysis and design of the Online Driving School Management System at AA driving school, Mombasa. It explains the development methodology used, the feasibility study, requirements elicitation, data analysis, system requirements, system specifications, system design, database design, and system architecture. The chapter also presents the diagrams and models used to design the proposed system before implementation.
+
+4.1.1 Systems Development Methodology
+
+The project used the Rapid Application Development (RAD) Model because it supports rapid system development through continuous user participation and feedback. According to Pressman and (Maxim, 2020)RAD reduces development time while ensuring that the system meets user requirements.
+
+Stages of the Prototype Model
+
+Requirements Gathering
+
+Quick Design
+
+Prototype Development
+
+User Evaluation
+
+System Refinement
+
+Final System Development
+
+4.2Feasibility Study
+
+A feasibility study was conducted to determine whether developing the Driving School Management System was practical.
+
+4.2.1Technical Feasibility
+
+The required software and hardware resources were available. The system was developed using PHP, MySQL, XAMPP, HTML, CSS, JavaScript, and Visual Studio Code.
+
+4.2.2Economic Feasibility
+
+The project required minimal financial resources because open-source software tools were used. Therefore, development costs were low.
+
+4.2.3Operational Feasibility
+
+Driving school staff and management supported the proposed system because it would simplify registration, scheduling, payment management, and report generation.
+
+4.2.4Schedule Feasibility
+
+The project was completed within the allocated academic research period.
+
+4.3 Data and System Analysis
+
+The questionnaires collected were analyzed using Microsoft Excel.
+
+The results were summarized using percentages and presented using charts.
+
+Table 4.1Sample Findings
+
+Challenge
+
+Percentage
+
+Slow student registration
+
+35%
+
+Lost student records
+
+20%
+
+Payment errors
+
+18%
+
+Difficult report generation
+
+15%
+
+Lesson scheduling conflicts
+
+12%
+
+Interpretation
+
+The analysis showed that the manual system experienced several problems, including:
+
+Slow service delivery
+
+Duplicate records
+
+Data loss
+
+Poor record management
+
+Difficult report preparation
+
+The findings justified the need for a computerized Driving School Management System.
+
+Figure 4.1: Pie chart showing the challenges experienced in the manual Driving School Management system.
+
+Interpretation
+
+The pie chart shows that Slow Registration (35%) was the most common challenge reported by respondents. Lost Records (20%), Payment Errors (18%), Difficult Report Generation (15%), and Scheduling Conflicts (12%) were also reported. These findings indicate the need for a computerized Driving School Management System.
+
+Figure 4.2: Comparison of Challenges Experienced in the Manual Driving School
+
+Interpretation
+
+The bar chart shows the main challenges experienced in the manual driving school management system. Slow registration was the biggest challenge (35%), followed by lost records (20%), payment errors (18%), difficulty in report generation (15%), and scheduling conflicts (12%). The results show that the manual system is inefficient and supports the need for a computerized driving school management system.
+
+4.4 System Specification.
+
+The system specification describes the minimum hardware and software requirements needed to develop, install, and run the Driving School Management System efficiently.
+
+Table4.4.1. Hardware requirements
+
+Hardware
+
+Requirements
+
+RAM
+
+4 GB or more
+
+Hard Disk
+
+500 GB or more
+
+Monitor
+
+14-inch or larger
+
+Keyboard
+
+Standard keyboard
+
+Mouse
+
+Optical mouse
+
+Printer
+
+For printing reports and receipts
+
+Internet Connection
+
+Required for online access and updates
+
+Table 4.4.2Software Requirements
+
+Software
+
+Purpose
+
+Windows 10 or Windows 11
+
+Operating System
+
+XAMPP
+
+Web server and database server
+
+PHP
+
+Server-side programming language
+
+MySQL
+
+Database Management System
+
+Visual Studio code or sublime text
+
+Code editor
+
+Google Chrome or Mozilla Firefox
+
+Web browser
+
+Microsoft Word
+
+Documentation
+
+Microsoft Excel
+
+Data analysis and charts
+
+4.4.3Functional Requirements
+
+The system should be able to:
+
+Register new students.
+
+Allow users to log in securely.
+
+Manage instructor information.
+
+Schedule driving lessons.
+
+Record student payments.
+
+Record driving test results.
+
+Generate reports.
+
+Store and retrieve records from the database.
+
+Allow updating and deleting records.
+
+4.4.4Non-Functional Requirements
+
+The system should:
+
+Be easy to use.
+
+Respond quickly to user requests.
+
+Keep user information secure.
+
+Be reliable and available when needed.
+
+Allow multiple users with different access rights.
+
+Be easy to maintain and update.
+
+4.5 System Design
+
+System design is the stage where the requirements of the system are turned into a plan for developing the system. It shows how the Driving School Management System will work and how different parts of the system will interact. The system design is divided into logical design and physical design.
+
+4.5.1 Logical Design
+
+Logical design describes what the system will do without explaining the hardware or software used. It focuses on the flow of information and the functions of the system.
+
+The Driving School Management System will perform the following functions:
+
+User login and logout.
+
+Student registration.
+
+Instructor management.
+
+Lesson scheduling.
+
+Payment management.
+
+Recording driving test results.
+
+Report generation.
+
+The system allows users to enter data, process it, store it in a database, and produce reports when required.
+
+4.5.2 Physical Design
+
+Physical design describes how the system will be implemented using hardware and software.
+
+The proposed Driving School Management System will use the following:
+
+Hardware Requirements
+
+Computer or laptop
+
+Keyboard and mouse
+
+Monitor
+
+Printer (for printing reports and receipts)
+
+Internet connection (if the system is online)
+
+Software Requirements
+
+Windows Operating System
+
+XAMPP Server
+
+PHP
+
+MySQL Database
+
+Web Browser (Google Chrome, Microsoft Edge, or Mozilla Firefox)
+
+Visual Studio Code or any PHP editor
+
+The system stores all information in a MySQL database. Users access the system through a web browser by entering their username and password. After logging in, they can perform their assigned tasks based on their user roles. The system processes the information and stores it securely in the database. It also allows users to generate reports and retrieve records whenever needed.
+
+4.6 System Architecture
+
+System architecture describes the overall structure of the Driving School Management System. It shows how the users, the application, and the database work together. The system uses a three-tier architecture, which consists of the presentation layer, application layer, and database layer.
+
+4.6.1Presentation Layer
+
+student registration page, payment page, lesson scheduling page, and report page. Users enter information and view reports through these screens using a web browser.
+
+4.6.2Application Layer
+
+This layer processes all user requests. It checks login details, registers students, manages instructors, records payments, schedules lessons, stores driving test results, and generates reports. It also ensures that users can only access the functions they are authorized to use.
+
+Database Layer This is the part of the system that users interact with. It includes the login page, dashboard,
+
+This layer stores all the system information. It contains records of students, instructors, lesson schedules, payments, driving test results, and user accounts. The database keeps the information safe and allows it to be retrieved whenever needed.
+
+Figure4.6.1Simple System Architecture Diagram
+
+Users
+
+Administrator
+
+Instructor
+
+Student
+
+Users
+
+Administrator
+
+Instructor
+
+Student
+
+MySQL Database
+
+Student
+
+Instructor
+
+Lessons
+
+Payment
+
+Driving Test
+
+Report
+
+MySQL Database
+
+Student
+
+Instructor
+
+Lessons
+
+Payment
+
+Driving Test
+
+Report
+
+Online Driving School Management system
+
+Online Driving School Management system
+
+Figure 4.6.1System Architecture diagram of the online Driving school management System.
+
+The system architecture diagram shows how users interact with the Online Driving School Management System at AA driving school, Mombasa through the web interface. The system processes user requests using PHP, communicates with the MySQL database to store and retrieve information, and uses XAMPP as the local server environment. This architecture allows information to flow efficiently between users, the application, and the database.
+
+4.7 Design Techniques
+
+Design techniques are methods used to plan and develop the Driving School Management System. They help the developer understand how the system will work and how the different parts of the system will be connected.
+
+4.7.1 Use Case Diagram
+
+A use case diagram shows the users of the system and the activities they perform. The users are the Administrator, Receptionist, Instructor, and Student. The main activities include logging in, registering students, scheduling lessons, recording payments, viewing driving test results, generating reports, and logging out.
+
+4.7.2 System Flowchart
+
+A system flowchart shows the steps followed by the system when processing information. It starts when a user logs in, performs a task such as registering a student or recording a payment, saves the information in the database, and finally displays the required results.
+
+4.7.3 Entity Relationship Diagram (ERD)
+
+An Entity Relationship Diagram (ERD) shows how the database tables are related. The main tables in the system are Students, Instructors, Lessons, Payments, Driving Test Results, and Users.  ERD helps to organize data correctly and avoid duplication.
+
+4.8 Database Design
+
+Database design is the process of organizing and storing data in a database. It helps to ensure that information is stored correctly, can be accessed easily, and is protected from loss or duplication. The Driving School Management System uses a database to store information about students, instructors, lessons, payments, driving test results, and users.
+
+The following tables are used in the system.
+
+Table 4.8.1: Students
+
+Field Name
+
+Data Type
+
+Description
+
+Student ID
+
+Integer
+
+Unique student number
+
+Full Name
+
+Varchar
+
+Student's full name
+
+Gender
+
+Varchar
+
+Student's gender
+
+Phone
+
+Varchar
+
+Student's phone number
+
+Email
+
+Varchar
+
+Student's email address
+
+Address
+
+Varchar
+
+Student's home address
+
+Table 4.8.2: Instructors
+
+Field Name
+
+Data Type
+
+Description
+
+Instructor ID
+
+Integer
+
+Unique instructor number
+
+Full Name
+
+Varchar
+
+Instructor's full name
+
+Phone
+
+Varchar
+
+Instructor's phone number
+
+Email
+
+Varchar
+
+Instructor's email address
+
+License No
+
+Varchar
+
+Driving instructor's license number
+
+Table 4.8.3: Lesson Schedule
+
+Field Name
+
+Data Type
+
+Description
+
+Schedule ID
+
+Integer
+
+Unique schedule number
+
+Student ID
+
+Integer
+
+Student ID
+
+Instructor ID
+
+Integer
+
+Instructor ID
+
+Lesson Date
+
+Date
+
+Date of lesson
+
+Lesson Time
+
+Time
+
+Time of lesson
+
+z
+
+Table 4.8.4: Payments
+
+Field Name
+
+Data Type
+
+Description
+
+Payment ID
+
+Integer
+
+Unique payment number
+
+Student ID
+
+Integer
+
+Student ID
+
+Amount
+
+Decimal
+
+Amount paid
+
+Payment Date
+
+Date
+
+Date of payment
+
+Payment Method
+
+Varchar
+
+Cash, M-Pesa, or Bank
+
+Table 4.8.5: Driving Test Results
+
+Field Name
+
+Data Type
+
+Description
+
+Result ID
+
+Integer
+
+Unique result number
+
+Student ID
+
+Integer
+
+Student ID
+
+Test Date
+
+Date
+
+Date of the driving test
+
+Score
+
+Integer
+
+Marks scored
+
+Table 4.8.6: Users
+
+Field Name
+
+Data Type
+
+Description
+
+User ID
+
+Integer
+
+Unique user number
+
+Username
+
+Varchar
+
+Username
+
+Password
+
+Varchar
+
+User password
+
+Role
+
+Varchar
+
+Administrator, Receptionist, Instructor, or Student
+
+References
+
+Kendall, K. E., & Kendall, J. E. (2019). Systems analysis and design (10th ed.). Pearson.
+
+Laudon, K. C., & Laudon, J. P. (2022). Management information systems: Managing the digital firm (17th ed.). Pearson.
+
+Sommerville, I. (2016). Software engineering (10th ed.). Pearson.
+
+Turban, E., Pollard, C., & Wood, G. (2023). Information technology for management: Driving digital transformation to increase local and global performance, growth and sustainability (12th ed.). Wiley.
+
+Baltzan, P. (2022). Business driven information systems (8th ed.). McGraw-Hill Education.
+
+Bourgeois, D. T., Smith, J. L., Wang, S., & Mortati, J. (2019). Information systems for business and beyond. Saylor Academy.
+
+Kenya Law. (2020). The Traffic (Driving Schools, Driving Instructors and Driving Licences) Rules, 2020. National Council for Law Reporting.
+
+Kendall, K. E., & Kendall, J. E. (2019). Systems analysis and design (10th ed.). Pearson.
+
+Kumaran, S. (2024). Driving school management system.
+
+Rainer, R. K., Prince, B., Cegielski, C., & Splettstoesser-Hogeterp, I. (2021). Introduction to information systems: Supporting and transforming business (8th ed.). Wiley
+
+Alhitty, A. A. (2023). Higher education EFL online success model: An adaptation to the DeLone and McLean IS Success Model. Technology in Language Teaching & Learning, 5(2), 76–90. https://doi.org/10.29140/tltl.v5n2.1183
+
+Bugwandin, V., & Bayat, M. S. (2023). Organisational cybernetics: A systems thinking method used for small and medium enterprises. Acta Commercii, 23(1), a1092. https://doi.org/10.4102/ac.v23i1.1092
+
+Kendall, K. E., & Kendall, J. E. (2019). Systems analysis and design (10th ed.). Pearson.
+
+Ortiz-López, A., Sánchez-Prieto, J. C., & Olmos-Migueláñez, S. (2024). Perceived usefulness of mobile devices in assessment: A comparative study of three technology acceptance models using PLS-SEM. Journal of New Approaches in Educational Research
+
+Rosenblatt, H. J. (2019). Systems analysis and design (10th ed.). Cengage Learning.
+
+Sidabutar, T. S. E., & Hanani, R. (2025). Pengaruh variabel perceived usefulness dan perceived ease of use terhadap behavioral intention to use pada aplikasi E-Kinerja di Kementerian Perhubungan: Tinjauan berdasarkan pendekatan Technology Acceptance Model (TAM). Journal of Management and Public Policy, 14(2), 925–945. https://doi.org/10.14710/jppmr.v14i2.50736
+
+Ting, F. D. L., & Mostafa, S. A. (2022). Akademi Memandu Suria Sibu management system. Applied Information Technology and Computer Science, 3(1), 1212–1231.
+
+Widyaningrum, T., Sholihah, Q., & Haryono, B. S. (2024). The DeLone and McLean Information System Success Model: Investigating user satisfaction in learning management system. Journal of Education Technology, 8(1), 86–94.
+
+Saba, P., DeLone, W., Ul-Ain, N., Harfouche, A., Ben Nasr, I., Biot-Paquerot, G., & Mallek, S. (2025). The DeLone and McLean Information Systems Success Model: What is the future evolution for its foundations, components, and applications? Communications of the Association for Information Systems, 57, 878–898. https://doi.org/10.17705/1CAIS.05738

@@ -1,0 +1,415 @@
+{
+  "users": [
+    {
+      "user_id": 1,
+      "username": "admin",
+      "password": "password123",
+      "full_name": "Administrator (Cynthia Jeruto)",
+      "email": "admin@aadrivingschool.co.ke",
+      "phone": "+254712345678",
+      "role": "Administrator",
+      "status": "Active"
+    },
+    {
+      "user_id": 2,
+      "username": "receptionist",
+      "password": "password123",
+      "full_name": "Fatuma Ali",
+      "email": "reception@aadrivingschool.co.ke",
+      "phone": "+254722334455",
+      "role": "Receptionist",
+      "status": "Active"
+    },
+    {
+      "user_id": 3,
+      "username": "instructor1",
+      "password": "password123",
+      "full_name": "David Ochieng",
+      "email": "david.ochieng@aadrivingschool.co.ke",
+      "phone": "+254733445566",
+      "role": "Instructor",
+      "status": "Active"
+    },
+    {
+      "user_id": 4,
+      "username": "instructor2",
+      "password": "password123",
+      "full_name": "Hassan Mwinyi",
+      "email": "hassan.mwinyi@aadrivingschool.co.ke",
+      "phone": "+254744556677",
+      "role": "Instructor",
+      "status": "Active"
+    },
+    {
+      "user_id": 5,
+      "username": "student1",
+      "password": "password123",
+      "full_name": "Mary Wanjiku",
+      "email": "mary.wanjiku@gmail.com",
+      "phone": "+254755667788",
+      "role": "Student",
+      "status": "Active"
+    }
+  ],
+  "instructors": [
+    {
+      "instructor_id": 1,
+      "user_id": 3,
+      "instructor_no": "AA-INS-001",
+      "full_name": "David Ochieng",
+      "gender": "Male",
+      "phone": "+254733445566",
+      "email": "david.ochieng@aadrivingschool.co.ke",
+      "license_no": "NTSA/DI/2019/482",
+      "license_expiry": "2027-12-31",
+      "specialization": "Class B (Light Manual & Automatic)",
+      "address": "Nyali, Mombasa",
+      "status": "Active"
+    },
+    {
+      "instructor_id": 2,
+      "user_id": 4,
+      "instructor_no": "AA-INS-002",
+      "full_name": "Hassan Mwinyi",
+      "gender": "Male",
+      "phone": "+254744556677",
+      "email": "hassan.mwinyi@aadrivingschool.co.ke",
+      "license_no": "NTSA/DI/2021/119",
+      "license_expiry": "2028-06-30",
+      "specialization": "Class B (Light Vehicle) & Class A (Motorcycle)",
+      "address": "Tudor, Mombasa",
+      "status": "Active"
+    },
+    {
+      "instructor_id": 3,
+      "user_id": null,
+      "instructor_no": "AA-INS-003",
+      "full_name": "Amina Bakari",
+      "gender": "Female",
+      "phone": "+254799887766",
+      "email": "amina.bakari@aadrivingschool.co.ke",
+      "license_no": "NTSA/DI/2022/804",
+      "license_expiry": "2028-01-15",
+      "specialization": "Class B Defensive Driving Specialist",
+      "address": "Bamburi, Mombasa",
+      "status": "Active"
+    }
+  ],
+  "vehicles": [
+    {
+      "vehicle_id": 1,
+      "reg_no": "KDE 312M",
+      "model": "Toyota Vitz (Dual Pedal Control)",
+      "transmission": "Manual",
+      "category": "Class B (Light Vehicle)",
+      "status": "Available"
+    },
+    {
+      "vehicle_id": 2,
+      "reg_no": "KDF 841P",
+      "model": "Toyota Belta (Dual Pedal Control)",
+      "transmission": "Automatic",
+      "category": "Class B (Light Vehicle)",
+      "status": "Available"
+    },
+    {
+      "vehicle_id": 3,
+      "reg_no": "KDG 109K",
+      "model": "Isuzu D-Max Pick-up",
+      "transmission": "Manual",
+      "category": "Class C1 (Light Truck)",
+      "status": "Available"
+    },
+    {
+      "vehicle_id": 4,
+      "reg_no": "KMDF 234L",
+      "model": "TVS Star HLX 125 Motorcycle",
+      "transmission": "Manual",
+      "category": "Class A2 (Motorcycle)",
+      "status": "Available"
+    }
+  ],
+  "students": [
+    {
+      "student_id": 1,
+      "user_id": 5,
+      "student_reg_no": "AA/MBA/2026/001",
+      "full_name": "Mary Wanjiku",
+      "gender": "Female",
+      "date_of_birth": "2002-05-14",
+      "phone": "+254755667788",
+      "email": "mary.wanjiku@gmail.com",
+      "national_id": "38491024",
+      "address": "Kizingo, Mombasa",
+      "course_category": "Category B (Light Vehicle - Manual)",
+      "course_fee": 15000,
+      "registration_date": "2026-10-01",
+      "status": "In Training"
+    },
+    {
+      "student_id": 2,
+      "user_id": null,
+      "student_reg_no": "AA/MBA/2026/002",
+      "full_name": "Brian Kipchumba",
+      "gender": "Male",
+      "date_of_birth": "1999-11-20",
+      "phone": "+254711223344",
+      "email": "brian.k@yahoo.com",
+      "national_id": "35912840",
+      "address": "Likoni, Mombasa",
+      "course_category": "Category B (Light Vehicle - Automatic)",
+      "course_fee": 16000,
+      "registration_date": "2026-10-05",
+      "status": "In Training"
+    },
+    {
+      "student_id": 3,
+      "user_id": null,
+      "student_reg_no": "AA/MBA/2026/003",
+      "full_name": "Salim Omar",
+      "gender": "Male",
+      "date_of_birth": "2001-03-08",
+      "phone": "+254722998811",
+      "email": "salim.omar@gmail.com",
+      "national_id": "37812944",
+      "address": "Old Town, Mombasa",
+      "course_category": "Category A (Motorcycle)",
+      "course_fee": 9500,
+      "registration_date": "2026-10-12",
+      "status": "Test Ready"
+    },
+    {
+      "student_id": 4,
+      "user_id": null,
+      "student_reg_no": "AA/MBA/2026/004",
+      "full_name": "Grace Moraa",
+      "gender": "Female",
+      "date_of_birth": "1998-08-25",
+      "phone": "+254733123456",
+      "email": "grace.moraa@outlook.com",
+      "national_id": "34198273",
+      "address": "Changamwe, Mombasa",
+      "course_category": "Category B (Light Vehicle - Manual)",
+      "course_fee": 15000,
+      "registration_date": "2026-09-15",
+      "status": "Completed"
+    },
+    {
+      "student_id": 5,
+      "user_id": null,
+      "student_reg_no": "AA/MBA/2026/005",
+      "full_name": "Ahmed Juma",
+      "gender": "Male",
+      "date_of_birth": "2003-01-30",
+      "phone": "+254788112233",
+      "email": "ahmed.juma@gmail.com",
+      "national_id": "39120485",
+      "address": "Mtwapa, Mombasa",
+      "course_category": "Category B (Light Vehicle - Manual)",
+      "course_fee": 15000,
+      "registration_date": "2026-11-02",
+      "status": "Enrolled"
+    },
+    {
+      "student_id": 6,
+      "user_id": null,
+      "student_reg_no": "AA/MBA/2026/006",
+      "full_name": "Benjamin mwasya",
+      "gender": "Male",
+      "date_of_birth": null,
+      "phone": "+254795317428",
+      "email": "titusben64@gmail.com",
+      "national_id": "42769694",
+      "address": "Mombasa",
+      "course_category": "Category B (Light Vehicle - Manual)",
+      "course_fee": 15000,
+      "registration_date": "2026-11-16",
+      "status": "Enrolled"
+    }
+  ],
+  "lesson_schedules": [
+    {
+      "schedule_id": 1,
+      "student_id": 1,
+      "instructor_id": 1,
+      "vehicle_id": 1,
+      "lesson_topic": "Clutch Control & Hill Starts",
+      "lesson_date": "2026-11-17",
+      "lesson_time": "09:00:00",
+      "duration_minutes": 60,
+      "status": "Scheduled",
+      "instructor_notes": "Focus on smooth biting point control along Nyali slopes."
+    },
+    {
+      "schedule_id": 2,
+      "student_id": 2,
+      "instructor_id": 2,
+      "vehicle_id": 2,
+      "lesson_topic": "Three-point Turn & Parallel Parking",
+      "lesson_date": "2026-11-17",
+      "lesson_time": "10:30:00",
+      "duration_minutes": 60,
+      "status": "Scheduled",
+      "instructor_notes": "Practicing reverse bay parking at Mombasa showground area."
+    },
+    {
+      "schedule_id": 3,
+      "student_id": 3,
+      "instructor_id": 2,
+      "vehicle_id": 4,
+      "lesson_topic": "Emergency Braking & Slalom Maneuver",
+      "lesson_date": "2026-11-18",
+      "lesson_time": "08:30:00",
+      "duration_minutes": 60,
+      "status": "Scheduled",
+      "instructor_notes": "Pre-test motorcycle maneuver assessment."
+    },
+    {
+      "schedule_id": 4,
+      "student_id": 1,
+      "instructor_id": 1,
+      "vehicle_id": 1,
+      "lesson_topic": "Basic Steering & Gear Selection",
+      "lesson_date": "2026-11-12",
+      "lesson_time": "09:00:00",
+      "duration_minutes": 60,
+      "status": "Completed",
+      "instructor_notes": "Student demonstrated good mirror checks and gear shifting."
+    },
+    {
+      "schedule_id": 5,
+      "student_id": 4,
+      "instructor_id": 3,
+      "vehicle_id": 1,
+      "lesson_topic": "Pre-Test Driving Assessment Mock",
+      "lesson_date": "2026-10-28",
+      "lesson_time": "11:00:00",
+      "duration_minutes": 60,
+      "status": "Completed",
+      "instructor_notes": "Passed mock exam with high confidence. Ready for NTSA test."
+    },
+    {
+      "schedule_id": 6,
+      "student_id": 6,
+      "instructor_id": 1,
+      "vehicle_id": 3,
+      "lesson_topic": "Clutch Control & Hill Starts",
+      "lesson_date": "2026-11-16",
+      "lesson_time": "09:00:00",
+      "duration_minutes": 60,
+      "status": "Scheduled",
+      "instructor_notes": "meet me at the gate"
+    }
+  ],
+  "payments": [
+    {
+      "payment_id": 1,
+      "receipt_no": "RCT-2026-001",
+      "student_id": 1,
+      "amount": 10000,
+      "payment_date": "2026-10-01",
+      "payment_method": "M-Pesa",
+      "reference_no": "QA189KL93Z",
+      "notes": "First installment for Class B Manual",
+      "recorded_by": 2
+    },
+    {
+      "payment_id": 2,
+      "receipt_no": "RCT-2026-002",
+      "student_id": 1,
+      "amount": 5000,
+      "payment_date": "2026-11-05",
+      "payment_method": "M-Pesa",
+      "reference_no": "QB421MN88Y",
+      "notes": "Final balance clearance",
+      "recorded_by": 2
+    },
+    {
+      "payment_id": 3,
+      "receipt_no": "RCT-2026-003",
+      "student_id": 2,
+      "amount": 10000,
+      "payment_date": "2026-10-05",
+      "payment_method": "Bank Transfer",
+      "reference_no": "EKB-8491024",
+      "notes": "NCBA Bank Mombasa Deposit",
+      "recorded_by": 1
+    },
+    {
+      "payment_id": 4,
+      "receipt_no": "RCT-2026-004",
+      "student_id": 3,
+      "amount": 9500,
+      "payment_date": "2026-10-12",
+      "payment_method": "M-Pesa",
+      "reference_no": "QC992OP11X",
+      "notes": "Full payment for Motorcycle training",
+      "recorded_by": 2
+    },
+    {
+      "payment_id": 5,
+      "receipt_no": "RCT-2026-005",
+      "student_id": 4,
+      "amount": 15000,
+      "payment_date": "2026-09-15",
+      "payment_method": "Cash",
+      "reference_no": "CSH-09-15-44",
+      "notes": "Full tuition cash payment at Mombasa desk",
+      "recorded_by": 2
+    },
+    {
+      "payment_id": 6,
+      "receipt_no": "RCT-2026-006",
+      "student_id": 5,
+      "amount": 8000,
+      "payment_date": "2026-11-02",
+      "payment_method": "M-Pesa",
+      "reference_no": "QD512RS77W",
+      "notes": "Registration & initial deposit",
+      "recorded_by": 2
+    },
+    {
+      "payment_id": 7,
+      "receipt_no": "RCT-2026-0007",
+      "student_id": 6,
+      "amount": 5000,
+      "payment_date": "2026-11-16",
+      "payment_method": "Cash",
+      "reference_no": "",
+      "notes": "Tuition fee installment",
+      "recorded_by": 1
+    }
+  ],
+  "driving_test_results": [
+    {
+      "result_id": 1,
+      "student_id": 4,
+      "test_date": "2026-10-30",
+      "test_type": "Final NTSA/Police Driving Test",
+      "score": 88,
+      "status": "Pass",
+      "examiner_name": "Senior Insp. J. Mwangi (NTSA Mombasa)",
+      "remarks": "Excellently executed three-point turn, roundabouts, and hill-start."
+    },
+    {
+      "result_id": 2,
+      "student_id": 3,
+      "test_date": "2026-11-10",
+      "test_type": "Internal Theory Test",
+      "score": 92,
+      "status": "Pass",
+      "examiner_name": "David Ochieng (Senior Instructor)",
+      "remarks": "Passed Highway Code, road signs, and model town board rules."
+    },
+    {
+      "result_id": 3,
+      "student_id": 1,
+      "test_date": "2026-11-14",
+      "test_type": "Internal Practical Mock Test",
+      "score": 74,
+      "status": "Pass",
+      "examiner_name": "Amina Bakari",
+      "remarks": "Good vehicle control; minor reminder on mirror check sequence."
+    }
+  ]
+}

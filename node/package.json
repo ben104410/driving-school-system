@@ -1,0 +1,17 @@
+{
+  "name": "driving-school-management-system",
+  "version": "1.0.0",
+  "description": "Online Driving School Management System (Case Study: AA Driving School at Mombasa) - Cynthia Jeruto (Kenya Methodist University)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "driving-school",
+    "kemu",
+    "mombasa",
+    "management-system"
+  ],
+  "author": "Cynthia Jeruto",
+  "license": "ISC"
+}

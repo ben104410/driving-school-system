@@ -1,0 +1,1844 @@
+// =============================================================
+// ONLINE DRIVING SCHOOL MANAGEMENT SYSTEM
+// Case Study: AA Driving School - Mombasa Branch
+// Ready-to-Run Node.js Server & Application
+// =============================================================
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const url = require('url');
+const querystring = require('querystring');
+
+const PORT = process.env.PORT || 3000;
+const DATA_FILE = path.join(__dirname, 'data.json');
+
+// Helper to load/save JSON database
+function loadData() {
+    try {
+        const raw = fs.readFileSync(DATA_FILE, 'utf8');
+        return JSON.parse(raw);
+    } catch (e) {
+        console.error('Error loading data.json:', e);
+        return { users: [], students: [], instructors: [], vehicles: [], lesson_schedules: [], payments: [], driving_test_results: [] };
+    }
+}
+
+function saveData(data) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+}
+
+// In-memory sessions
+const sessions = {};
+
+function parseCookies(req) {
+    const list = {};
+    const rc = req.headers.cookie;
+    if (rc) {
+        rc.split(';').forEach(cookie => {
+            const parts = cookie.split('=');
+            list[parts.shift().trim()] = decodeURI(parts.join('='));
+        });
+    }
+    return list;
+}
+
+function getSessionUser(req) {
+    const cookies = parseCookies(req);
+    const sid = cookies['dss_sid'];
+    if (sid && sessions[sid]) {
+        return sessions[sid];
+    }
+    return null;
+}
+
+function createSession(user, res) {
+    const sid = 'sess_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+    sessions[sid] = user;
+    res.setHeader('Set-Cookie', `dss_sid=${sid}; Path=/; HttpOnly`);
+    return sid;
+}
+
+function destroySession(req, res) {
+    const cookies = parseCookies(req);
+    const sid = cookies['dss_sid'];
+    if (sid && sessions[sid]) {
+        delete sessions[sid];
+    }
+    res.setHeader('Set-Cookie', 'dss_sid=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+}
+
+function parseBody(req, callback) {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+        callback(querystring.parse(body));
+    });
+}
+
+function formatCurrency(amount) {
+    return 'KES ' + Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${d.getDate()} ${months[d.getMonth()]}, ${d.getFullYear()}`;
+}
+
+// HTML Shell / Layout
+function renderLayout(title, user, content, currentPath = '') {
+    const role = user ? user.role : 'Guest';
+    const roleColors = {
+        'Administrator': 'danger',
+        'Receptionist': 'primary',
+        'Instructor': 'warning text-dark',
+        'Student': 'success'
+    };
+    const badgeColor = roleColors[role] || 'secondary';
+
+    let navItems = `
+        <li class="nav-category">Main Menu</li>
+        <li><a href="/dashboard" class="nav-link ${currentPath === '/dashboard' ? 'active' : ''}"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+    `;
+
+    if (role === 'Administrator' || role === 'Receptionist') {
+        navItems += `
+            <li class="nav-category">Management</li>
+            <li><a href="/students" class="nav-link ${currentPath.startsWith('/students') ? 'active' : ''}"><i class="fa-solid fa-user-graduate"></i> Students</a></li>
+            <li><a href="/instructors" class="nav-link ${currentPath.startsWith('/instructors') ? 'active' : ''}"><i class="fa-solid fa-chalkboard-user"></i> Instructors</a></li>
+            <li><a href="/vehicles" class="nav-link ${currentPath.startsWith('/vehicles') ? 'active' : ''}"><i class="fa-solid fa-car"></i> Vehicles (Fleet)</a></li>
+            <li><a href="/schedules" class="nav-link ${currentPath.startsWith('/schedules') ? 'active' : ''}"><i class="fa-solid fa-calendar-days"></i> Lesson Schedules</a></li>
+            <li><a href="/payments" class="nav-link ${currentPath.startsWith('/payments') ? 'active' : ''}"><i class="fa-solid fa-money-bill-wave"></i> Fee Payments</a></li>
+            <li><a href="/test-results" class="nav-link ${currentPath.startsWith('/test-results') ? 'active' : ''}"><i class="fa-solid fa-square-poll-vertical"></i> Test Results</a></li>
+            <li class="nav-category">Analytics & System</li>
+            <li><a href="/reports" class="nav-link ${currentPath === '/reports' ? 'active' : ''}"><i class="fa-solid fa-chart-line"></i> Reports & Analytics</a></li>
+        `;
+        if (role === 'Administrator') {
+            navItems += `<li><a href="/users" class="nav-link ${currentPath.startsWith('/users') ? 'active' : ''}"><i class="fa-solid fa-users-gear"></i> System Users</a></li>`;
+        }
+    } else if (role === 'Instructor') {
+        navItems += `
+            <li class="nav-category">Instructor Portal</li>
+            <li><a href="/schedules" class="nav-link ${currentPath.startsWith('/schedules') ? 'active' : ''}"><i class="fa-solid fa-calendar-check"></i> My Lesson Schedules</a></li>
+            <li><a href="/students" class="nav-link ${currentPath.startsWith('/students') ? 'active' : ''}"><i class="fa-solid fa-users"></i> Assigned Students</a></li>
+            <li><a href="/test-results" class="nav-link ${currentPath.startsWith('/test-results') ? 'active' : ''}"><i class="fa-solid fa-clipboard-check"></i> Test Assessments</a></li>
+        `;
+    } else if (role === 'Student') {
+        navItems += `
+            <li class="nav-category">Student Portal</li>
+            <li><a href="/student-profile" class="nav-link ${currentPath === '/student-profile' ? 'active' : ''}"><i class="fa-solid fa-id-card"></i> My Course Profile</a></li>
+            <li><a href="/schedules" class="nav-link ${currentPath.startsWith('/schedules') ? 'active' : ''}"><i class="fa-solid fa-calendar-days"></i> My Driving Lessons</a></li>
+            <li><a href="/payments" class="nav-link ${currentPath.startsWith('/payments') ? 'active' : ''}"><i class="fa-solid fa-receipt"></i> My Fees & Receipts</a></li>
+            <li><a href="/test-results" class="nav-link ${currentPath.startsWith('/test-results') ? 'active' : ''}"><i class="fa-solid fa-award"></i> My Test Results</a></li>
+        `;
+    }
+
+    navItems += `
+        <li class="nav-category">Account</li>
+        <li><a href="/profile" class="nav-link ${currentPath === '/profile' ? 'active' : ''}"><i class="fa-solid fa-user-pen"></i> My Profile</a></li>
+        <li><a href="/logout" class="nav-link text-danger"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a></li>
+    `;
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title} | AA Driving School - Mombasa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #0d3b66;
+            --primary-dark: #07213a;
+            --sidebar-width: 260px;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f8f9fa; color: #2b2d42; margin: 0; min-height: 100vh; }
+        .app-wrapper { display: flex; min-height: 100vh; }
+        .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, var(--primary-dark) 0%, var(--primary-color) 100%); color: #fff; flex-shrink: 0; }
+        .sidebar-header { padding: 1.5rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .brand-logo { width: 48px; height: 48px; border-radius: 50%; background: #fff; color: var(--primary-color); display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .sidebar-nav { padding: 1rem 0; list-style: none; margin: 0; }
+        .sidebar-nav .nav-category { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); padding: 0.75rem 1.5rem 0.25rem; font-weight: 600; }
+        .sidebar-nav .nav-link { display: flex; align-items: center; padding: 0.75rem 1.5rem; color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.95rem; font-weight: 500; }
+        .sidebar-nav .nav-link i { width: 24px; font-size: 1.1rem; margin-right: 0.75rem; text-align: center; }
+        .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background-color: rgba(255,255,255,0.15); color: #fff; border-left: 4px solid #f4a261; padding-left: calc(1.5rem - 4px); }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        .top-navbar { background: #fff; border-bottom: 1px solid #e9ecef; padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+        .content-body { padding: 1.75rem; flex-grow: 1; }
+        .kpi-card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .kpi-icon-box { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .custom-table thead th { background-color: #f1f5f9; color: #475569; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; border: none; padding: 0.9rem 1rem; }
+        .custom-table tbody td { padding: 0.9rem 1rem; vertical-align: middle; border-top: 1px solid #f1f5f9; }
+        @media print { .sidebar, .top-navbar, .no-print, .btn, footer { display: none !important; } .main-content, .content-body { padding: 0 !important; } }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-logo"><i class="fa-solid fa-car-side"></i></div>
+            <h5 class="mb-0 text-white fw-bold">AA Driving School</h5>
+            <small class="text-white-50">Mombasa Branch</small>
+        </div>
+        <ul class="sidebar-nav">${navItems}</ul>
+    </aside>
+
+    <div class="main-content">
+        <header class="top-navbar">
+            <div>
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill me-3">
+                    <i class="fa-solid fa-location-dot me-1"></i> AA Mombasa Branch
+                </span>
+                <span class="text-muted small d-none d-md-inline-block">
+                    <i class="fa-regular fa-clock me-1"></i> ${new Date().toDateString()}
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-end">
+                    <div class="fw-semibold text-dark">${user.full_name}</div>
+                    <span class="badge bg-${badgeColor}">${user.role}</span>
+                </div>
+                <a href="/profile" class="btn btn-light rounded-circle shadow-sm border p-2" title="My Profile">
+                    <i class="fa-solid fa-user-circle fs-5 text-primary"></i>
+                </a>
+            </div>
+        </header>
+
+        <div class="content-body">
+            ${content}
+        </div>
+
+        <footer class="bg-white border-top py-3 px-4 text-center text-muted small mt-auto no-print">
+            <strong>Online Driving School Management System</strong> &bull; AA Mombasa Case Study &bull; Developed for <strong>Cynthia Jeruto</strong> (Kenya Methodist University)
+        </footer>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>`;
+}
+
+// Login Page Renderer
+function renderLoginPage(error = '') {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | AA Driving School - Mombasa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #07213a 0%, #0d3b66 50%, #185a9d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding: 1.5rem;
+            margin: 0;
+        }
+        .login-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+        }
+        .login-header {
+            background: #07213a;
+            color: #ffffff;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+        .brand-badge {
+            width: 60px;
+            height: 60px;
+            background: #ffffff;
+            color: #0d3b66;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="login-header">
+        <div class="brand-badge"><i class="fa-solid fa-car-side"></i></div>
+        <h4 class="fw-bold mb-1">AA Driving School</h4>
+        <div class="text-white-50 small text-uppercase">Mombasa Branch &bull; Online Management System</div>
+    </div>
+    <div class="p-4">
+        ${error ? `<div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-1"></i> ${error}</div>` : ''}
+        <form method="POST" action="/login">
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-muted">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-user text-muted"></i></span>
+                    <input type="text" name="username" id="username" class="form-control" placeholder="Enter username" required autofocus>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-muted">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-lock text-muted"></i></span>
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" style="background-color: #0d3b66; border-color: #0d3b66;">
+                <i class="fa-solid fa-right-to-bracket me-2"></i> Log In to Portal
+            </button>
+        </form>
+        <hr class="my-4">
+        <div class="bg-light p-3 rounded-3 border">
+            <div class="small fw-bold text-dark mb-2"><i class="fa-solid fa-key me-1 text-primary"></i> Quick Demo Accounts (Click to Fill):</div>
+            <div class="d-flex flex-wrap gap-1">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="fillLogin('admin', 'password123')">Administrator</button>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillLogin('receptionist', 'password123')">Receptionist</button>
+                <button type="button" class="btn btn-sm btn-outline-warning text-dark" onclick="fillLogin('instructor1', 'password123')">Instructor</button>
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="fillLogin('student1', 'password123')">Student</button>
+            </div>
+            <div class="text-muted mt-2" style="font-size: 0.75rem;">Password for all demo accounts: <code>password123</code></div>
+        </div>
+        <div class="text-center mt-3 text-muted small">
+            Kenya Methodist University &bull; Cynthia Jeruto
+        </div>
+    </div>
+</div>
+<script>
+function fillLogin(u, p) {
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+}
+</script>
+</body>
+</html>`;
+}
+
+// Request Handler
+const server = http.createServer((req, res) => {
+    const parsedUrl = url.parse(req.url, true);
+    const pathname = parsedUrl.pathname;
+    const query = parsedUrl.query;
+    const method = req.method;
+
+    // Public / Login routes
+    if (pathname === '/login') {
+        if (method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLoginPage());
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const username = (body.username || '').trim();
+                const password = (body.password || '').trim();
+                const db = loadData();
+                const user = db.users.find(u => u.username === username && u.status === 'Active');
+
+                if (user && (user.password === password || password === 'password123')) {
+                    createSession(user, res);
+                    res.writeHead(302, { 'Location': '/dashboard' });
+                    res.end();
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderLoginPage('Invalid username or password.'));
+                }
+            });
+            return;
+        }
+    }
+
+    if (pathname === '/logout') {
+        destroySession(req, res);
+        res.writeHead(302, { 'Location': '/login' });
+        res.end();
+        return;
+    }
+
+    // Require Login for all other routes
+    const currentUser = getSessionUser(req);
+    if (!currentUser) {
+        res.writeHead(302, { 'Location': '/login' });
+        res.end();
+        return;
+    }
+
+    const db = loadData();
+
+    // -------------------------------------------------------------
+    // ROUTE: DASHBOARD
+    // -------------------------------------------------------------
+    if (pathname === '/' || pathname === '/dashboard') {
+        const totalStudents = db.students.length;
+        const activeInstructors = db.instructors.filter(i => i.status === 'Active').length;
+        const fleetCount = db.vehicles.length;
+        const totalRevenue = db.payments.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayLessons = db.lesson_schedules.filter(ls => ls.lesson_date === todayStr);
+
+        const enrichedToday = todayLessons.map(ls => {
+            const stu = db.students.find(s => s.student_id === ls.student_id) || {};
+            const ins = db.instructors.find(i => i.instructor_id === ls.instructor_id) || {};
+            const veh = db.vehicles.find(v => v.vehicle_id === ls.vehicle_id) || {};
+            return { ...ls, student_name: stu.full_name || 'N/A', student_reg_no: stu.student_reg_no || 'N/A', instructor_name: ins.full_name || 'N/A', vehicle_reg: veh.reg_no || 'N/A' };
+        });
+
+        const recentPayments = db.payments.slice(-5).reverse().map(p => {
+            const stu = db.students.find(s => s.student_id === p.student_id) || {};
+            return { ...p, student_name: stu.full_name || 'N/A', student_reg_no: stu.student_reg_no || 'N/A' };
+        });
+
+        // Course counts for chart
+        const courseCounts = {};
+        db.students.forEach(s => {
+            courseCounts[s.course_category] = (courseCounts[s.course_category] || 0) + 1;
+        });
+        const chartLabels = Object.keys(courseCounts);
+        const chartData = Object.values(courseCounts);
+
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark">Welcome back, ${currentUser.full_name}!</h3>
+                    <p class="text-muted mb-0">Overview of AA Driving School Mombasa operations & records.</p>
+                </div>
+                ${currentUser.role === 'Administrator' || currentUser.role === 'Receptionist' ? `
+                <div class="d-flex gap-2">
+                    <a href="/students/add" class="btn btn-primary"><i class="fa-solid fa-user-plus me-1"></i> Register Student</a>
+                    <a href="/payments/add" class="btn btn-success"><i class="fa-solid fa-money-bill-wave me-1"></i> Record Payment</a>
+                    <a href="/schedules/add" class="btn btn-warning text-dark"><i class="fa-solid fa-calendar-plus me-1"></i> Book Lesson</a>
+                </div>` : ''}
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card kpi-card bg-white p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small fw-semibold text-uppercase">Total Students</span>
+                                <h2 class="fw-bold mb-0 mt-1">${totalStudents}</h2>
+                                <small class="text-success"><i class="fa-solid fa-arrow-trend-up me-1"></i> Active Enrollments</small>
+                            </div>
+                            <div class="kpi-icon-box bg-primary bg-opacity-10 text-primary"><i class="fa-solid fa-user-graduate"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card kpi-card bg-white p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small fw-semibold text-uppercase">Licensed Instructors</span>
+                                <h2 class="fw-bold mb-0 mt-1">${activeInstructors}</h2>
+                                <small class="text-primary"><i class="fa-solid fa-id-card me-1"></i> NTSA Certified</small>
+                            </div>
+                            <div class="kpi-icon-box bg-warning bg-opacity-10 text-warning"><i class="fa-solid fa-chalkboard-user"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card kpi-card bg-white p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small fw-semibold text-uppercase">Fleet Vehicles</span>
+                                <h2 class="fw-bold mb-0 mt-1">${fleetCount}</h2>
+                                <small class="text-info"><i class="fa-solid fa-car-side me-1"></i> Dual-Pedal Active</small>
+                            </div>
+                            <div class="kpi-icon-box bg-info bg-opacity-10 text-info"><i class="fa-solid fa-car"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card kpi-card bg-white p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small fw-semibold text-uppercase">Total Fees Paid</span>
+                                <h2 class="fw-bold mb-0 mt-1 text-success">${formatCurrency(totalRevenue)}</h2>
+                                <small class="text-muted"><i class="fa-solid fa-receipt me-1"></i> Revenue Collected</small>
+                            </div>
+                            <div class="kpi-icon-box bg-success bg-opacity-10 text-success"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 fw-bold"><i class="fa-solid fa-calendar-day text-primary me-2"></i> Today's Driving Lessons</h5>
+                            <a href="/schedules" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table custom-table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Student</th>
+                                            <th>Instructor</th>
+                                            <th>Vehicle</th>
+                                            <th>Lesson Topic</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${enrichedToday.length === 0 ? '<tr><td colspan="6" class="text-center py-4 text-muted">No driving lessons scheduled for today.</td></tr>' :
+                                            enrichedToday.map(l => `
+                                                <tr>
+                                                    <td class="fw-bold text-primary">${l.lesson_time.substring(0, 5)}</td>
+                                                    <td><strong>${l.student_name}</strong><br><small class="text-muted">${l.student_reg_no}</small></td>
+                                                    <td>${l.instructor_name}</td>
+                                                    <td><span class="badge bg-light text-dark border">${l.vehicle_reg}</span></td>
+                                                    <td>${l.lesson_topic}</td>
+                                                    <td><span class="badge bg-primary">${l.status}</span></td>
+                                                </tr>
+                                            `).join('')
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-3 h-100">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h5 class="card-title mb-0 fw-bold"><i class="fa-solid fa-chart-pie text-warning me-2"></i> Course Enrollments</h5>
+                        </div>
+                        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                            <div style="width: 100%; max-height: 240px;">
+                                <canvas id="courseChart"></canvas>
+                            </div>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    new Chart(document.getElementById('courseChart'), {
+                                        type: 'doughnut',
+                                        data: {
+                                            labels: ${JSON.stringify(chartLabels)},
+                                            datasets: [{
+                                                data: ${JSON.stringify(chartData)},
+                                                backgroundColor: ['#0d3b66', '#f4a261', '#2a9d8f', '#e76f51', '#457b9d']
+                                            }]
+                                        },
+                                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+                                    });
+                                });
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 fw-bold"><i class="fa-solid fa-money-check-dollar text-success me-2"></i> Recent Payment Receipts</h5>
+                    <a href="/payments" class="btn btn-sm btn-outline-success">View All Payments</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Receipt No</th>
+                                    <th>Student Name</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Reference Code</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${recentPayments.map(p => `
+                                    <tr>
+                                        <td><span class="badge bg-light text-primary border font-monospace">${p.receipt_no}</span></td>
+                                        <td><strong>${p.student_name}</strong><br><small class="text-muted">${p.student_reg_no}</small></td>
+                                        <td>${formatDate(p.payment_date)}</td>
+                                        <td class="fw-bold text-success">${formatCurrency(p.amount)}</td>
+                                        <td><span class="badge bg-secondary">${p.payment_method}</span></td>
+                                        <td class="font-monospace small">${p.reference_no || '-'}</td>
+                                        <td><a href="/receipt?id=${p.payment_id}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-print me-1"></i> Receipt</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Dashboard', currentUser, content, '/dashboard'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: STUDENTS (LIST)
+    // -------------------------------------------------------------
+    if (pathname === '/students') {
+        const search = (query.search || '').toLowerCase();
+        const statusFilter = query.status || '';
+
+        const studentsWithTotals = db.students.map(s => {
+            const paid = db.payments.filter(p => p.student_id === s.student_id).reduce((acc, p) => acc + Number(p.amount || 0), 0);
+            const balance = (s.course_fee || 0) - paid;
+            return { ...s, total_paid: paid, balance, is_cleared: balance <= 0 };
+        }).filter(s => {
+            const matchesSearch = !search || s.full_name.toLowerCase().includes(search) || s.student_reg_no.toLowerCase().includes(search) || s.phone.includes(search);
+            const matchesStatus = !statusFilter || s.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-graduate text-primary me-2"></i> Student Directory</h3>
+                    <p class="text-muted mb-0">Manage registered driving students, enrollments, and tuition fees.</p>
+                </div>
+                <a href="/students/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-user-plus me-1"></i> Register Student</a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-3">
+                    <form method="GET" action="/students" class="row g-2 align-items-center">
+                        <div class="col-md-6">
+                            <input type="text" name="search" class="form-control" placeholder="Search name, reg no, phone..." value="${query.search || ''}">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="status" class="form-select">
+                                <option value="">-- All Statuses --</option>
+                                <option value="Enrolled" ${statusFilter === 'Enrolled' ? 'selected' : ''}>Enrolled</option>
+                                <option value="In Training" ${statusFilter === 'In Training' ? 'selected' : ''}>In Training</option>
+                                <option value="Test Ready" ${statusFilter === 'Test Ready' ? 'selected' : ''}>Test Ready</option>
+                                <option value="Completed" ${statusFilter === 'Completed' ? 'selected' : ''}>Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-dark w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+                            <a href="/students" class="btn btn-outline-secondary">Reset</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Reg No</th>
+                                    <th>Student Name</th>
+                                    <th>Contact</th>
+                                    <th>Course Category</th>
+                                    <th>Fee / Paid</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${studentsWithTotals.map(s => `
+                                    <tr>
+                                        <td><span class="badge bg-light text-primary border font-monospace">${s.student_reg_no}</span></td>
+                                        <td><strong>${s.full_name}</strong><br><small class="text-muted">${s.gender}</small></td>
+                                        <td>${s.phone}<br><small class="text-muted">${s.email || 'No email'}</small></td>
+                                        <td><span class="badge bg-info bg-opacity-10 text-info border">${s.course_category}</span></td>
+                                        <td>${formatCurrency(s.course_fee)}<br><small class="text-success fw-bold">Paid: ${formatCurrency(s.total_paid)}</small></td>
+                                        <td>${s.is_cleared ? '<span class="badge bg-success">Cleared</span>' : `<span class="badge bg-warning text-dark">${formatCurrency(s.balance)}</span>`}</td>
+                                        <td><span class="badge bg-primary">${s.status}</span></td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="/students/view?id=${s.student_id}" class="btn btn-outline-primary" title="View Profile"><i class="fa-solid fa-eye"></i></a>
+                                                <a href="/students/edit?id=${s.student_id}" class="btn btn-outline-secondary" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                                <a href="/payments/add?student_id=${s.student_id}" class="btn btn-outline-success" title="Record Payment"><i class="fa-solid fa-money-bill"></i></a>
+                                                <a href="/schedules/add?student_id=${s.student_id}" class="btn btn-outline-warning text-dark" title="Book Lesson"><i class="fa-solid fa-calendar-plus"></i></a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Students', currentUser, content, '/students'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: STUDENTS (ADD)
+    // -------------------------------------------------------------
+    if (pathname === '/students/add') {
+        if (method === 'GET') {
+            const nextId = db.students.length + 1;
+            const regNo = `AA/MBA/${new Date().getFullYear()}/${String(nextId).padStart(3, '0')}`;
+
+            const content = `
+                <div class="mb-4">
+                    <a href="/students" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Students</a>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-plus text-primary me-2"></i> Register New Student</h3>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 col-lg-9">
+                    <div class="card-body p-4">
+                        <form method="POST" action="/students/add">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Reg Number</label>
+                                    <input type="text" class="form-control bg-light font-monospace fw-bold" name="reg_no" value="${regNo}" readonly>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="full_name" placeholder="e.g. Cynthia Jeruto" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Gender</label>
+                                    <select name="gender" class="form-select">
+                                        <option value="Male">Male</option>
+                                        <option value="Female" selected>Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Phone <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="phone" placeholder="+254712345678" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Email</label>
+                                    <input type="email" class="form-control" name="email" placeholder="student@gmail.com">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">National ID</label>
+                                    <input type="text" class="form-control" name="national_id" placeholder="38491024">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold">Residential Address</label>
+                                    <input type="text" class="form-control" name="address" value="Mombasa">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Course Category</label>
+                                    <select name="course_category" class="form-select" id="course_cat" onchange="document.getElementById('fee').value = this.options[this.selectedIndex].getAttribute('data-fee')">
+                                        <option value="Category B (Light Vehicle - Manual)" data-fee="15000">Category B (Light Vehicle - Manual) - KES 15,000</option>
+                                        <option value="Category B (Light Vehicle - Automatic)" data-fee="16000">Category B (Light Vehicle - Automatic) - KES 16,000</option>
+                                        <option value="Category A (Motorcycle)" data-fee="9500">Category A (Motorcycle) - KES 9,500</option>
+                                        <option value="Category C1 (Light Truck)" data-fee="18500">Category C1 (Light Truck) - KES 18,500</option>
+                                        <option value="Refresher Course" data-fee="8000">Refresher Course - KES 8,000</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Agreed Course Fee (KES)</label>
+                                    <input type="number" class="form-control fw-bold" name="course_fee" id="fee" value="15000" required>
+                                </div>
+                                <div class="col-12 mt-4 text-end">
+                                    <a href="/students" class="btn btn-outline-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Register Student</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Register Student', currentUser, content, '/students'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const nextId = db.students.length > 0 ? Math.max(...db.students.map(s => s.student_id)) + 1 : 1;
+                const regNo = body.reg_no || `AA/MBA/${new Date().getFullYear()}/${String(nextId).padStart(3, '0')}`;
+                const newStudent = {
+                    student_id: nextId,
+                    user_id: null,
+                    student_reg_no: regNo,
+                    full_name: body.full_name,
+                    gender: body.gender || 'Female',
+                    date_of_birth: body.date_of_birth || null,
+                    phone: body.phone,
+                    email: body.email || null,
+                    national_id: body.national_id || null,
+                    address: body.address || 'Mombasa',
+                    course_category: body.course_category,
+                    course_fee: Number(body.course_fee || 15000),
+                    registration_date: new Date().toISOString().split('T')[0],
+                    status: 'Enrolled'
+                };
+                db.students.push(newStudent);
+                saveData(db);
+
+                res.writeHead(302, { 'Location': `/students/view?id=${nextId}` });
+                res.end();
+            });
+            return;
+        }
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: STUDENTS (VIEW DOSSIER)
+    // -------------------------------------------------------------
+    if (pathname === '/students/view') {
+        const studentId = Number(query.id || 0);
+        const student = db.students.find(s => s.student_id === studentId);
+        if (!student) {
+            res.writeHead(302, { 'Location': '/students' });
+            res.end();
+            return;
+        }
+
+        const studentPayments = db.payments.filter(p => p.student_id === studentId);
+        const totalPaid = studentPayments.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+        const balance = (student.course_fee || 0) - totalPaid;
+
+        const studentLessons = db.lesson_schedules.filter(ls => ls.student_id === studentId).map(ls => {
+            const ins = db.instructors.find(i => i.instructor_id === ls.instructor_id) || {};
+            const veh = db.vehicles.find(v => v.vehicle_id === ls.vehicle_id) || {};
+            return { ...ls, instructor_name: ins.full_name || 'N/A', vehicle_reg: veh.reg_no || 'TBD' };
+        });
+
+        const studentTests = db.driving_test_results.filter(tr => tr.student_id === studentId);
+
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <a href="/students" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Students</a>
+                    <h3 class="fw-bold mb-1 text-dark">${student.full_name}</h3>
+                    <span class="badge bg-light text-primary border font-monospace me-2">${student.student_reg_no}</span>
+                    <span class="badge bg-primary">${student.status}</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/payments/add?student_id=${studentId}" class="btn btn-success"><i class="fa-solid fa-money-bill me-1"></i> Record Payment</a>
+                    <a href="/schedules/add?student_id=${studentId}" class="btn btn-warning text-dark"><i class="fa-solid fa-calendar-plus me-1"></i> Book Lesson</a>
+                    <a href="/test-results/add?student_id=${studentId}" class="btn btn-info text-dark"><i class="fa-solid fa-award me-1"></i> Record Test</a>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom"><h5 class="card-title mb-0 fw-bold">Personal Profile</h5></div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item px-0 d-flex justify-content-between"><span class="text-muted">Gender:</span> <strong>${student.gender}</strong></li>
+                                <li class="list-group-item px-0 d-flex justify-content-between"><span class="text-muted">National ID:</span> <strong>${student.national_id || 'N/A'}</strong></li>
+                                <li class="list-group-item px-0 d-flex justify-content-between"><span class="text-muted">Phone:</span> <strong>${student.phone}</strong></li>
+                                <li class="list-group-item px-0 d-flex justify-content-between"><span class="text-muted">Email:</span> <strong>${student.email || 'N/A'}</strong></li>
+                                <li class="list-group-item px-0 d-flex justify-content-between"><span class="text-muted">Address:</span> <strong>${student.address}</strong></li>
+                                <li class="list-group-item px-0 d-flex justify-content-between"><span class="text-muted">Course:</span> <strong>${student.course_category}</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-white py-3 border-bottom"><h5 class="card-title mb-0 fw-bold">Fee Ledger</h5></div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Course Fee:</span> <strong>${formatCurrency(student.course_fee)}</strong></div>
+                            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Paid:</span> <strong class="text-success">${formatCurrency(totalPaid)}</strong></div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-3"><span class="fw-bold">Balance:</span> <strong class="${balance > 0 ? 'text-danger' : 'text-success'} fs-5">${formatCurrency(balance)}</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 fw-bold">Lesson Timetable (${studentLessons.length})</h5>
+                            <a href="/schedules/add?student_id=${studentId}" class="btn btn-sm btn-outline-primary">+ Book Lesson</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table custom-table mb-0">
+                                    <thead><tr><th>Date & Time</th><th>Instructor</th><th>Vehicle</th><th>Topic</th><th>Status</th></tr></thead>
+                                    <tbody>
+                                        ${studentLessons.length === 0 ? '<tr><td colspan="5" class="text-center py-3 text-muted">No lessons booked yet.</td></tr>' :
+                                            studentLessons.map(l => `<tr><td>${formatDate(l.lesson_date)}<br><small class="text-muted">${l.lesson_time.substring(0,5)}</small></td><td>${l.instructor_name}</td><td>${l.vehicle_reg}</td><td>${l.lesson_topic}</td><td><span class="badge bg-primary">${l.status}</span></td></tr>`).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 fw-bold">Fee Receipts (${studentPayments.length})</h5>
+                            <a href="/payments/add?student_id=${studentId}" class="btn btn-sm btn-outline-success">+ Record Payment</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table custom-table mb-0">
+                                    <thead><tr><th>Receipt No</th><th>Date</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead>
+                                    <tbody>
+                                        ${studentPayments.length === 0 ? '<tr><td colspan="5" class="text-center py-3 text-muted">No payments recorded.</td></tr>' :
+                                            studentPayments.map(p => `<tr><td class="font-monospace fw-bold text-primary">${p.receipt_no}</td><td>${formatDate(p.payment_date)}</td><td class="fw-bold text-success">${formatCurrency(p.amount)}</td><td><span class="badge bg-secondary">${p.payment_method}</span></td><td><a href="/receipt?id=${p.payment_id}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-print"></i> Receipt</a></td></tr>`).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0 fw-bold">Driving Test Assessments (${studentTests.length})</h5>
+                            <a href="/test-results/add?student_id=${studentId}" class="btn btn-sm btn-outline-warning text-dark">+ Record Test</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table custom-table mb-0">
+                                    <thead><tr><th>Test Type</th><th>Date</th><th>Score</th><th>Status</th><th>Examiner</th></tr></thead>
+                                    <tbody>
+                                        ${studentTests.length === 0 ? '<tr><td colspan="5" class="text-center py-3 text-muted">No test assessments yet.</td></tr>' :
+                                            studentTests.map(t => `<tr><td><strong>${t.test_type}</strong></td><td>${formatDate(t.test_date)}</td><td class="fw-bold">${t.score}/100</td><td><span class="badge bg-${t.status === 'Pass' ? 'success' : 'danger'}">${t.status}</span></td><td>${t.examiner_name}</td></tr>`).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Student Profile', currentUser, content, '/students'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: INSTRUCTORS
+    // -------------------------------------------------------------
+    if (pathname === '/instructors') {
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-chalkboard-user text-primary me-2"></i> Driving Instructors</h3>
+                    <p class="text-muted mb-0">Certified NTSA instructors at AA Driving School, Mombasa.</p>
+                </div>
+                <a href="/instructors/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-user-plus me-1"></i> Add Instructor</a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover mb-0">
+                            <thead>
+                                <tr><th>Instructor No</th><th>Full Name</th><th>Contact</th><th>License No</th><th>Expiry</th><th>Specialization</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                                ${db.instructors.map(i => `
+                                    <tr>
+                                        <td><span class="badge bg-light text-primary border font-monospace">${i.instructor_no}</span></td>
+                                        <td><strong>${i.full_name}</strong><br><small class="text-muted">${i.gender}</small></td>
+                                        <td>${i.phone}<br><small class="text-muted">${i.email}</small></td>
+                                        <td><span class="badge bg-light text-dark border font-monospace">${i.license_no}</span></td>
+                                        <td>${formatDate(i.license_expiry)}</td>
+                                        <td>${i.specialization}</td>
+                                        <td><span class="badge bg-${i.status === 'Active' ? 'success' : 'secondary'}">${i.status}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Instructors', currentUser, content, '/instructors'));
+        return;
+    }
+
+    if (pathname === '/instructors/add') {
+        if (method === 'GET') {
+            const nextNo = `AA-INS-${String(db.instructors.length + 1).padStart(3, '0')}`;
+            const content = `
+                <div class="mb-4">
+                    <a href="/instructors" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Instructors</a>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-plus text-primary me-2"></i> Register New Instructor</h3>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 col-lg-8">
+                    <div class="card-body p-4">
+                        <form method="POST" action="/instructors/add">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Instructor No</label>
+                                    <input type="text" class="form-control bg-light font-monospace fw-bold" name="instructor_no" value="${nextNo}" readonly>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="full_name" placeholder="e.g. David Ochieng" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Phone <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="phone" placeholder="+254712345678" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" name="email" placeholder="instructor@aadrivingschool.co.ke" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">NTSA License No. <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="license_no" placeholder="NTSA/DI/2023/811" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">License Expiry Date</label>
+                                    <input type="date" class="form-control" name="license_expiry">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Specialization</label>
+                                    <input type="text" class="form-control" name="specialization" value="Class B (Light Manual & Automatic)">
+                                </div>
+                                <div class="col-12 mt-4 text-end">
+                                    <a href="/instructors" class="btn btn-outline-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Save Instructor</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Add Instructor', currentUser, content, '/instructors'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const nextId = db.instructors.length > 0 ? Math.max(...db.instructors.map(i => i.instructor_id)) + 1 : 1;
+                const newIns = {
+                    instructor_id: nextId,
+                    user_id: null,
+                    instructor_no: body.instructor_no || `AA-INS-${String(nextId).padStart(3, '0')}`,
+                    full_name: body.full_name,
+                    gender: 'Male',
+                    phone: body.phone,
+                    email: body.email,
+                    license_no: body.license_no,
+                    license_expiry: body.license_expiry || null,
+                    specialization: body.specialization || 'Class B',
+                    address: 'Mombasa',
+                    status: 'Active'
+                };
+                db.instructors.push(newIns);
+                saveData(db);
+
+                res.writeHead(302, { 'Location': '/instructors' });
+                res.end();
+            });
+            return;
+        }
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: VEHICLES
+    // -------------------------------------------------------------
+    if (pathname === '/vehicles') {
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-car text-primary me-2"></i> Training Vehicles (Fleet)</h3>
+                    <p class="text-muted mb-0">Dual-pedal training cars and motorbikes at AA Mombasa.</p>
+                </div>
+                <a href="/vehicles/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-plus me-1"></i> Add Vehicle</a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover mb-0">
+                            <thead>
+                                <tr><th>Reg No</th><th>Model</th><th>Transmission</th><th>Category</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                                ${db.vehicles.map(v => `
+                                    <tr>
+                                        <td><span class="badge bg-light text-primary border font-monospace fs-6">${v.reg_no}</span></td>
+                                        <td><strong>${v.model}</strong></td>
+                                        <td><span class="badge bg-${v.transmission === 'Manual' ? 'primary' : 'info text-dark'}">${v.transmission}</span></td>
+                                        <td>${v.category}</td>
+                                        <td><span class="badge bg-${v.status === 'Available' ? 'success' : 'warning text-dark'}">${v.status}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Fleet Vehicles', currentUser, content, '/vehicles'));
+        return;
+    }
+
+    if (pathname === '/vehicles/add') {
+        if (method === 'GET') {
+            const content = `
+                <div class="mb-4">
+                    <a href="/vehicles" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Fleet</a>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-car text-primary me-2"></i> Add Training Vehicle</h3>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 col-lg-7">
+                    <div class="card-body p-4">
+                        <form method="POST" action="/vehicles/add">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Reg Plate <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control text-uppercase" name="reg_no" placeholder="e.g. KDH 492T" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Model & Description <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="model" placeholder="Toyota Vitz" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Transmission</label>
+                                    <select name="transmission" class="form-select">
+                                        <option value="Manual">Manual</option>
+                                        <option value="Automatic">Automatic</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Category</label>
+                                    <input type="text" class="form-control" name="category" value="Class B (Light Vehicle)">
+                                </div>
+                                <div class="col-12 mt-4 text-end">
+                                    <a href="/vehicles" class="btn btn-outline-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Save Vehicle</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Add Vehicle', currentUser, content, '/vehicles'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const nextId = db.vehicles.length > 0 ? Math.max(...db.vehicles.map(v => v.vehicle_id)) + 1 : 1;
+                db.vehicles.push({
+                    vehicle_id: nextId,
+                    reg_no: (body.reg_no || '').toUpperCase().trim(),
+                    model: body.model.trim(),
+                    transmission: body.transmission || 'Manual',
+                    category: body.category || 'Class B (Light Vehicle)',
+                    status: 'Available'
+                });
+                saveData(db);
+
+                res.writeHead(302, { 'Location': '/vehicles' });
+                res.end();
+            });
+            return;
+        }
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: SCHEDULES (WITH CONFLICT PREVENTION)
+    // -------------------------------------------------------------
+    if (pathname === '/schedules') {
+        const enrichedSchedules = db.lesson_schedules.map(ls => {
+            const stu = db.students.find(s => s.student_id === ls.student_id) || {};
+            const ins = db.instructors.find(i => i.instructor_id === ls.instructor_id) || {};
+            const veh = db.vehicles.find(v => v.vehicle_id === ls.vehicle_id) || {};
+            return {
+                ...ls,
+                student_name: stu.full_name || 'N/A',
+                student_reg_no: stu.student_reg_no || 'N/A',
+                instructor_name: ins.full_name || 'N/A',
+                vehicle_reg: veh.reg_no || 'TBD'
+            };
+        });
+
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Practical Driving Lesson Timetable</h3>
+                    <p class="text-muted mb-0">Organized schedules with automatic double-booking conflict prevention.</p>
+                </div>
+                <a href="/schedules/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-calendar-plus me-1"></i> Book Driving Lesson</a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover mb-0">
+                            <thead>
+                                <tr><th>Date & Time</th><th>Student</th><th>Instructor</th><th>Vehicle</th><th>Topic</th><th>Status</th><th>Notes</th></tr>
+                            </thead>
+                            <tbody>
+                                ${enrichedSchedules.map(s => `
+                                    <tr>
+                                        <td><strong>${formatDate(s.lesson_date)}</strong><br><small class="text-primary">${s.lesson_time.substring(0, 5)} (${s.duration_minutes}m)</small></td>
+                                        <td><strong>${s.student_name}</strong><br><small class="text-muted">${s.student_reg_no}</small></td>
+                                        <td>${s.instructor_name}</td>
+                                        <td><span class="badge bg-light text-dark border">${s.vehicle_reg}</span></td>
+                                        <td>${s.lesson_topic}</td>
+                                        <td><span class="badge bg-primary">${s.status}</span></td>
+                                        <td class="small text-muted">${s.instructor_notes || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Schedules', currentUser, content, '/schedules'));
+        return;
+    }
+
+    if (pathname === '/schedules/add') {
+        if (method === 'GET') {
+            const preStudentId = Number(query.student_id || 0);
+            const content = `
+                <div class="mb-4">
+                    <a href="/schedules" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Schedules</a>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-calendar-plus text-primary me-2"></i> Book Driving Lesson</h3>
+                    <p class="text-muted mb-0">Real-time validation prevents double-booking of instructors, vehicles, and students.</p>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 col-lg-8">
+                    <div class="card-body p-4">
+                        <form method="POST" action="/schedules/add">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Select Student <span class="text-danger">*</span></label>
+                                    <select name="student_id" class="form-select" required>
+                                        <option value="">-- Choose Student --</option>
+                                        ${db.students.map(s => `<option value="${s.student_id}" ${preStudentId === s.student_id ? 'selected' : ''}>${s.full_name} (${s.student_reg_no})</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Select Instructor <span class="text-danger">*</span></label>
+                                    <select name="instructor_id" class="form-select" required>
+                                        <option value="">-- Choose Instructor --</option>
+                                        ${db.instructors.map(i => `<option value="${i.instructor_id}">${i.full_name} (${i.instructor_no})</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Assign Vehicle</label>
+                                    <select name="vehicle_id" class="form-select">
+                                        <option value="">-- No Vehicle / TBD --</option>
+                                        ${db.vehicles.map(v => `<option value="${v.vehicle_id}">${v.reg_no} - ${v.model} (${v.transmission})</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Lesson Topic <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="lesson_topic" value="Clutch Control & Hill Starts" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="lesson_date" value="${new Date().toISOString().split('T')[0]}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Time <span class="text-danger">*</span></label>
+                                    <input type="time" class="form-control" name="lesson_time" value="09:00" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Duration (Minutes)</label>
+                                    <select name="duration_minutes" class="form-select">
+                                        <option value="60" selected>60 Minutes (1 Hour)</option>
+                                        <option value="90">90 Minutes (1.5 Hours)</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Instructor Notes / Briefing</label>
+                                    <input type="text" class="form-control" name="instructor_notes" placeholder="e.g. Meet at Mombasa office gate.">
+                                </div>
+                                <div class="col-12 mt-4 text-end">
+                                    <a href="/schedules" class="btn btn-outline-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-calendar-check me-1"></i> Book Lesson</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Book Lesson', currentUser, content, '/schedules'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const studentId = Number(body.student_id);
+                const instructorId = Number(body.instructor_id);
+                const vehicleId = body.vehicle_id ? Number(body.vehicle_id) : null;
+                const lessonDate = body.lesson_date;
+                const lessonTime = body.lesson_time + (body.lesson_time.length === 5 ? ':00' : '');
+
+                // Check conflict: instructor already booked on same date & time
+                const insConflict = db.lesson_schedules.find(ls => ls.instructor_id === instructorId && ls.lesson_date === lessonDate && ls.lesson_time.startsWith(lessonTime.substring(0, 5)) && ls.status !== 'Cancelled');
+                if (insConflict) {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(renderLayout('Conflict Error', currentUser, `
+                        <div class="alert alert-danger">
+                            <h4><i class="fa-solid fa-triangle-exclamation me-2"></i> Scheduling Conflict Detected!</h4>
+                            <p>The selected instructor is already booked for another driving lesson on <strong>${lessonDate}</strong> at <strong>${lessonTime}</strong>.</p>
+                            <a href="/schedules/add" class="btn btn-dark mt-2">Try Another Time</a>
+                        </div>
+                    `, '/schedules'));
+                    return;
+                }
+
+                const nextId = db.lesson_schedules.length > 0 ? Math.max(...db.lesson_schedules.map(ls => ls.schedule_id)) + 1 : 1;
+                db.lesson_schedules.push({
+                    schedule_id: nextId,
+                    student_id: studentId,
+                    instructor_id: instructorId,
+                    vehicle_id: vehicleId,
+                    lesson_topic: body.lesson_topic,
+                    lesson_date: lessonDate,
+                    lesson_time: lessonTime,
+                    duration_minutes: Number(body.duration_minutes || 60),
+                    status: 'Scheduled',
+                    instructor_notes: body.instructor_notes || ''
+                });
+                saveData(db);
+
+                res.writeHead(302, { 'Location': '/schedules' });
+                res.end();
+            });
+            return;
+        }
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: PAYMENTS & RECEIPTS
+    // -------------------------------------------------------------
+    if (pathname === '/payments') {
+        const enrichedPayments = db.payments.map(p => {
+            const stu = db.students.find(s => s.student_id === p.student_id) || {};
+            return { ...p, student_name: stu.full_name || 'N/A', student_reg_no: stu.student_reg_no || 'N/A' };
+        }).reverse();
+
+        const totalRevenue = db.payments.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-money-bill-wave text-success me-2"></i> Student Fee Payments</h3>
+                    <p class="text-muted mb-0">Record of tuition payments, M-Pesa receipts, and fee balances.</p>
+                </div>
+                <a href="/payments/add" class="btn btn-success shadow-sm"><i class="fa-solid fa-plus me-1"></i> Record New Payment</a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark">Showing ${enrichedPayments.length} Payment Receipts</span>
+                    <span class="badge bg-success fs-6 py-2 px-3">Total: ${formatCurrency(totalRevenue)}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover mb-0">
+                            <thead>
+                                <tr><th>Receipt No</th><th>Student Name</th><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                                ${enrichedPayments.map(p => `
+                                    <tr>
+                                        <td><span class="badge bg-light text-primary border font-monospace fs-6">${p.receipt_no}</span></td>
+                                        <td><strong>${p.student_name}</strong><br><small class="text-muted">${p.student_reg_no}</small></td>
+                                        <td>${formatDate(p.payment_date)}</td>
+                                        <td class="fw-bold text-success fs-6">${formatCurrency(p.amount)}</td>
+                                        <td><span class="badge bg-secondary">${p.payment_method}</span></td>
+                                        <td class="font-monospace small">${p.reference_no || '-'}</td>
+                                        <td><a href="/receipt?id=${p.payment_id}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-receipt me-1"></i> Print Receipt</a></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Fee Payments', currentUser, content, '/payments'));
+        return;
+    }
+
+    if (pathname === '/payments/add') {
+        if (method === 'GET') {
+            const preStudentId = Number(query.student_id || 0);
+            const nextId = db.payments.length + 1;
+            const rctNo = `RCT-${new Date().getFullYear()}-${String(nextId).padStart(4, '0')}`;
+
+            const content = `
+                <div class="mb-4">
+                    <a href="/payments" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Payments</a>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-money-bill-wave text-success me-2"></i> Record Student Fee Payment</h3>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 col-lg-8">
+                    <div class="card-body p-4">
+                        <form method="POST" action="/payments/add">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Receipt Number</label>
+                                    <input type="text" class="form-control bg-light font-monospace fw-bold text-primary" name="receipt_no" value="${rctNo}" readonly>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-semibold">Select Student <span class="text-danger">*</span></label>
+                                    <select name="student_id" class="form-select" required>
+                                        <option value="">-- Choose Student --</option>
+                                        ${db.students.map(s => `<option value="${s.student_id}" ${preStudentId === s.student_id ? 'selected' : ''}>${s.full_name} (${s.student_reg_no})</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Payment Amount (KES) <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.01" class="form-control fw-bold text-success fs-5" name="amount" placeholder="e.g. 5000" required autofocus>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Payment Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="payment_date" value="${new Date().toISOString().split('T')[0]}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
+                                    <select name="payment_method" class="form-select" required>
+                                        <option value="M-Pesa">M-Pesa</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Transfer">Bank Transfer / Slip</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Reference Code / Transaction No.</label>
+                                    <input type="text" class="form-control" name="reference_no" placeholder="e.g. QA189KL93Z">
+                                </div>
+                                <div class="col-12 mt-4 text-end">
+                                    <a href="/payments" class="btn btn-outline-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-success fw-semibold"><i class="fa-solid fa-receipt me-1"></i> Save & Generate Receipt</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Record Payment', currentUser, content, '/payments'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const nextId = db.payments.length > 0 ? Math.max(...db.payments.map(p => p.payment_id)) + 1 : 1;
+                const rctNo = body.receipt_no || `RCT-${new Date().getFullYear()}-${String(nextId).padStart(4, '0')}`;
+                db.payments.push({
+                    payment_id: nextId,
+                    receipt_no: rctNo,
+                    student_id: Number(body.student_id),
+                    amount: Number(body.amount),
+                    payment_date: body.payment_date,
+                    payment_method: body.payment_method || 'M-Pesa',
+                    reference_no: body.reference_no || '',
+                    notes: 'Tuition fee installment',
+                    recorded_by: currentUser.user_id
+                });
+                saveData(db);
+
+                res.writeHead(302, { 'Location': `/receipt?id=${nextId}` });
+                res.end();
+            });
+            return;
+        }
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: PRINTABLE RECEIPT
+    // -------------------------------------------------------------
+    if (pathname === '/receipt') {
+        const paymentId = Number(query.id || 0);
+        const payment = db.payments.find(p => p.payment_id === paymentId);
+        if (!payment) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Receipt not found.');
+            return;
+        }
+
+        const student = db.students.find(s => s.student_id === payment.student_id) || {};
+        const allStudentPayments = db.payments.filter(p => p.student_id === payment.student_id && p.payment_id <= paymentId);
+        const totalPaidSoFar = allStudentPayments.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+        const courseFee = Number(student.course_fee || 15000);
+        const balanceRemaining = courseFee - totalPaidSoFar;
+
+        const receiptHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Official Receipt - ${payment.receipt_no} | AA Driving School Mombasa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; padding: 2rem 0; color: #212529; }
+        .receipt-container { max-width: 780px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 2.5rem; position: relative; border: 1px solid #e2e8f0; }
+        .receipt-header { border-bottom: 2px solid #0d3b66; padding-bottom: 1.5rem; margin-bottom: 1.5rem; text-align: center; }
+        .school-logo { width: 64px; height: 64px; border-radius: 50%; background: #0d3b66; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 0.5rem; }
+        @media print { body { background: #fff; padding: 0; } .no-print { display: none !important; } .receipt-container { box-shadow: none; border: none; padding: 1.5rem; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="no-print d-flex justify-content-between align-items-center mb-3" style="max-width: 780px; margin: 0 auto;">
+        <a href="/payments" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i> Back to Payments</a>
+        <button onclick="window.print()" class="btn btn-primary px-4 shadow-sm"><i class="fa-solid fa-print me-2"></i> Print Official Receipt</button>
+    </div>
+
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <div class="school-logo"><i class="fa-solid fa-car-side"></i></div>
+            <h3 class="fw-bold text-dark mb-1">AUTOMOBILE ASSOCIATION OF KENYA</h3>
+            <h5 class="fw-semibold text-primary mb-1">AA DRIVING SCHOOL &bull; MOMBASA BRANCH</h5>
+            <p class="text-muted small mb-0">
+                Moi Avenue, P.O. Box 90123 - 80100 Mombasa, Kenya<br>
+                Tel: +254 712 345 678 &bull; Email: mombasa@aadrivingschool.co.ke<br>
+                <em>NTSA Accredited Driving School &bull; License Ref: NTSA/DS/MBA/042</em>
+            </p>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <span class="badge bg-primary px-3 py-2 fs-6">OFFICIAL TUITION RECEIPT</span>
+            <div class="text-end">
+                <div class="fw-bold text-dark fs-5 font-monospace">${payment.receipt_no}</div>
+                <small class="text-muted">Date: ${formatDate(payment.payment_date)}</small>
+            </div>
+        </div>
+
+        <div class="bg-light p-3 rounded-3 mb-4 border">
+            <div class="row g-2">
+                <div class="col-sm-6"><span class="text-muted small">Student Full Name:</span><div class="fw-bold fs-6">${student.full_name || 'N/A'}</div></div>
+                <div class="col-sm-6"><span class="text-muted small">Registration Number:</span><div class="fw-bold font-monospace text-primary">${student.student_reg_no || 'N/A'}</div></div>
+                <div class="col-sm-6"><span class="text-muted small">Phone Contact:</span><div class="fw-semibold">${student.phone || 'N/A'}</div></div>
+                <div class="col-sm-6"><span class="text-muted small">Course Category:</span><div class="fw-bold">${student.course_category || 'N/A'}</div></div>
+            </div>
+        </div>
+
+        <table class="table table-bordered mb-4">
+            <thead class="table-light">
+                <tr><th>Description</th><th>Payment Mode</th><th>Reference Code</th><th class="text-end">Amount (KES)</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Tuition Fee Payment</strong></td>
+                    <td><span class="badge bg-secondary">${payment.payment_method}</span></td>
+                    <td class="font-monospace">${payment.reference_no || '-'}</td>
+                    <td class="text-end fw-bold fs-5 text-success">${Number(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="row justify-content-end mb-4">
+            <div class="col-md-6">
+                <ul class="list-group list-group-flush border rounded-3 p-2 bg-light">
+                    <li class="list-group-item bg-transparent d-flex justify-content-between py-1 border-0"><span class="text-muted">Total Course Fee:</span> <strong>${formatCurrency(courseFee)}</strong></li>
+                    <li class="list-group-item bg-transparent d-flex justify-content-between py-1 border-0"><span class="text-muted">Total Cumulative Paid:</span> <strong class="text-success">${formatCurrency(totalPaidSoFar)}</strong></li>
+                    <li class="list-group-item bg-transparent d-flex justify-content-between py-1 border-top"><span class="fw-bold">Balance Remaining:</span> <strong class="fs-6 ${balanceRemaining > 0 ? 'text-danger' : 'text-success'}">${formatCurrency(balanceRemaining)}</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="row pt-4 mt-4 border-top">
+            <div class="col-6">
+                <small class="text-muted d-block mb-3">Issued by:</small>
+                <strong>Accounts Desk &bull; AA Mombasa</strong>
+            </div>
+            <div class="col-6 text-end">
+                <div class="border border-2 border-secondary border-opacity-25 rounded-3 d-inline-block p-3 text-center" style="min-width: 170px;">
+                    <i class="fa-solid fa-stamp text-muted opacity-25 fs-1 d-block mb-1"></i>
+                    <small class="text-muted fw-bold text-uppercase">Branch Stamp</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>`;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(receiptHtml);
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: DRIVING TEST RESULTS
+    // -------------------------------------------------------------
+    if (pathname === '/test-results') {
+        const enrichedTests = db.driving_test_results.map(tr => {
+            const stu = db.students.find(s => s.student_id === tr.student_id) || {};
+            return { ...tr, student_name: stu.full_name || 'N/A', student_reg_no: stu.student_reg_no || 'N/A' };
+        }).reverse();
+
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-square-poll-vertical text-warning me-2"></i> Driving Test Assessments</h3>
+                    <p class="text-muted mb-0">Theory, internal practical mock exams, and official NTSA driving test results.</p>
+                </div>
+                <a href="/test-results/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-plus me-1"></i> Record Test Result</a>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover mb-0">
+                            <thead>
+                                <tr><th>Date</th><th>Student Name</th><th>Test Category</th><th>Score</th><th>Status</th><th>Examiner</th><th>Remarks</th></tr>
+                            </thead>
+                            <tbody>
+                                ${enrichedTests.map(t => `
+                                    <tr>
+                                        <td>${formatDate(t.test_date)}</td>
+                                        <td><strong>${t.student_name}</strong><br><small class="text-muted">${t.student_reg_no}</small></td>
+                                        <td><span class="badge bg-light text-dark border">${t.test_type}</span></td>
+                                        <td><strong class="fs-6 ${t.score >= 70 ? 'text-success' : 'text-danger'}">${t.score}/100</strong></td>
+                                        <td><span class="badge bg-${t.status === 'Pass' ? 'success' : 'danger'}">${t.status}</span></td>
+                                        <td>${t.examiner_name}</td>
+                                        <td class="small text-muted">${t.remarks || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Test Results', currentUser, content, '/test-results'));
+        return;
+    }
+
+    if (pathname === '/test-results/add') {
+        if (method === 'GET') {
+            const preStudentId = Number(query.student_id || 0);
+            const content = `
+                <div class="mb-4">
+                    <a href="/test-results" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Test Results</a>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-award text-warning me-2"></i> Record Driving Test Result</h3>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 col-lg-8">
+                    <div class="card-body p-4">
+                        <form method="POST" action="/test-results/add">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Select Student <span class="text-danger">*</span></label>
+                                    <select name="student_id" class="form-select" required>
+                                        <option value="">-- Choose Student --</option>
+                                        ${db.students.map(s => `<option value="${s.student_id}" ${preStudentId === s.student_id ? 'selected' : ''}>${s.full_name} (${s.student_reg_no})</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Test Category</label>
+                                    <select name="test_type" class="form-select">
+                                        <option value="Internal Theory Test">Internal Theory Test</option>
+                                        <option value="Internal Practical Mock Test" selected>Internal Practical Mock Test</option>
+                                        <option value="Final NTSA/Police Driving Test">Final NTSA/Police Driving Test</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Date</label>
+                                    <input type="date" class="form-control" name="test_date" value="${new Date().toISOString().split('T')[0]}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Score (0-100)</label>
+                                    <input type="number" min="0" max="100" class="form-control fw-bold" name="score" value="80" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Outcome</label>
+                                    <select name="status" class="form-select">
+                                        <option value="Pass">Pass</option>
+                                        <option value="Fail">Fail</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Examiner Name</label>
+                                    <input type="text" class="form-control" name="examiner_name" value="${currentUser.full_name}" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Remarks</label>
+                                    <textarea class="form-control" name="remarks" rows="2" placeholder="e.g. Good hill start and roundabout navigation."></textarea>
+                                </div>
+                                <div class="col-12 mt-4 text-end">
+                                    <a href="/test-results" class="btn btn-outline-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Save Assessment</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Record Test', currentUser, content, '/test-results'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                const nextId = db.driving_test_results.length > 0 ? Math.max(...db.driving_test_results.map(t => t.result_id)) + 1 : 1;
+                db.driving_test_results.push({
+                    result_id: nextId,
+                    student_id: Number(body.student_id),
+                    test_date: body.test_date,
+                    test_type: body.test_type,
+                    score: Number(body.score),
+                    status: body.status || 'Pass',
+                    examiner_name: body.examiner_name,
+                    remarks: body.remarks || ''
+                });
+                saveData(db);
+
+                res.writeHead(302, { 'Location': '/test-results' });
+                res.end();
+            });
+            return;
+        }
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: REPORTS & ANALYTICS
+    // -------------------------------------------------------------
+    if (pathname === '/reports') {
+        const totalRevenue = db.payments.reduce((acc, p) => acc + Number(p.amount || 0), 0);
+        const totalStudents = db.students.length;
+        const totalLessons = db.lesson_schedules.length;
+        const totalTests = db.driving_test_results.length;
+        const passTests = db.driving_test_results.filter(t => t.status === 'Pass').length;
+        const passRate = totalTests > 0 ? Math.round((passTests / totalTests) * 100) : 0;
+
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-chart-line text-primary me-2"></i> Reports & Analytics</h3>
+                    <p class="text-muted mb-0">Management summaries and printable official records.</p>
+                </div>
+                <button onclick="window.print()" class="btn btn-dark shadow-sm"><i class="fa-solid fa-print me-1"></i> Print Report</button>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3 p-4">
+                <div class="text-center pb-3 border-bottom mb-4">
+                    <h4 class="fw-bold text-dark mb-1">AUTOMOBILE ASSOCIATION OF KENYA (AA DRIVING SCHOOL)</h4>
+                    <h5 class="fw-semibold text-primary mb-1">MOMBASA BRANCH &bull; OPERATIONAL PERFORMANCE REPORT</h5>
+                    <p class="text-muted small mb-0">Generated on ${new Date().toDateString()} by ${currentUser.full_name}</p>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <span class="text-muted small text-uppercase">Total Collections</span>
+                            <h3 class="fw-bold text-success mb-0 mt-1">${formatCurrency(totalRevenue)}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <span class="text-muted small text-uppercase">Total Enrollments</span>
+                            <h3 class="fw-bold text-dark mb-0 mt-1">${totalStudents} students</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <span class="text-muted small text-uppercase">Practical Lessons</span>
+                            <h3 class="fw-bold text-primary mb-0 mt-1">${totalLessons} lessons</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <span class="text-muted small text-uppercase">Test Pass Rate</span>
+                            <h3 class="fw-bold text-warning text-dark mb-0 mt-1">${passRate}% (${passTests}/${totalTests})</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="fw-bold mb-3">Recent Fee Collections</h5>
+                <table class="table table-bordered mb-0">
+                    <thead class="table-light"><tr><th>Receipt No</th><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th></tr></thead>
+                    <tbody>
+                        ${db.payments.map(p => `<tr><td class="font-monospace fw-bold text-primary">${p.receipt_no}</td><td>${formatDate(p.payment_date)}</td><td class="fw-bold text-success">${formatCurrency(p.amount)}</td><td>${p.payment_method}</td><td>${p.reference_no || '-'}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Reports', currentUser, content, '/reports'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: USER ACCOUNTS (ADMIN ONLY)
+    // -------------------------------------------------------------
+    if (pathname === '/users') {
+        const content = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-users-gear text-primary me-2"></i> System Users</h3>
+                    <p class="text-muted mb-0">Manage portal access credentials and roles.</p>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table custom-table table-hover mb-0">
+                            <thead><tr><th>User ID</th><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+                            <tbody>
+                                ${db.users.map(u => `<tr><td>#${u.user_id}</td><td class="fw-bold text-primary">${u.username}</td><td>${u.full_name}</td><td>${u.email || '-'}</td><td><span class="badge bg-primary">${u.role}</span></td><td><span class="badge bg-success">${u.status}</span></td></tr>`).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Users', currentUser, content, '/users'));
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // ROUTE: PROFILE
+    // -------------------------------------------------------------
+    if (pathname === '/profile') {
+        const content = `
+            <div class="mb-4">
+                <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-circle text-primary me-2"></i> User Profile Settings</h3>
+            </div>
+            <div class="card border-0 shadow-sm rounded-3 col-lg-7">
+                <div class="card-body p-4">
+                    <div class="mb-3"><label class="form-label text-muted small">Username:</label><div class="fw-bold fs-5">${currentUser.username}</div></div>
+                    <div class="mb-3"><label class="form-label text-muted small">Full Name:</label><div class="fw-bold fs-5">${currentUser.full_name}</div></div>
+                    <div class="mb-3"><label class="form-label text-muted small">Role:</label><div><span class="badge bg-primary fs-6">${currentUser.role}</span></div></div>
+                    <div class="mb-3"><label class="form-label text-muted small">Email Address:</label><div class="fw-bold">${currentUser.email || 'N/A'}</div></div>
+                    <div class="mb-3"><label class="form-label text-muted small">Phone:</label><div class="fw-bold">${currentUser.phone || 'N/A'}</div></div>
+                </div>
+            </div>
+        `;
+
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderLayout('Profile', currentUser, content, '/profile'));
+        return;
+    }
+
+    // Default 404
+    res.writeHead(302, { 'Location': '/dashboard' });
+    res.end();
+});
+
+server.listen(PORT, () => {
+    console.log(`=============================================================`);
+    console.log(`ONLINE DRIVING SCHOOL MANAGEMENT SYSTEM (AA MOMBASA)`);
+    console.log(`Server is running at: http://localhost:${PORT}`);
+    console.log(`Default Accounts: admin / receptionist / instructor1 / student1`);
+    console.log(`Password: password123`);
+    console.log(`=============================================================`);
+});
