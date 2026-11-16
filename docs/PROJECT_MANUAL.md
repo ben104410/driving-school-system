@@ -41,7 +41,17 @@ The system implements the **Three-Tier Architecture** documented in Section 4.6 
 
 ## 3. Core Functional Modules
 
-### A. Authentication & Role-Based Access Control (RBAC)
+### A. Authentication, Registration & Role-Based Access Control (RBAC)
+- **Self-Service Sign Up / Registration:** Allows new users to create accounts directly via the Sign Up portal (`register.php` or `/register`):
+  - **Student Sign Up:** Automatically assigns an official Registration Number (`AA/MBA/2026/00X`), captures learner biodata, sets training status to `Enrolled`, and enrolls the student into their chosen driving course category with pre-configured tuition fees.
+  - **Instructor Sign Up:** Captures certified NTSA driving instructor license details, license expiry date, specialization categories, and automatically issues an Instructor Code (`AA-INS-00X`).
+  - **Receptionist Sign Up:** Front-desk account creation for staff managing inquiries, bookings, and fee collections.
+  - **Administrator Sign Up:** Management registration guarded with the AA branch authorization passcode (`AA-ADMIN-2026`).
+- **Profile Editing & Password Management:** Every user can view and edit their profile details via the **My Profile** portal (`profile.php` or `/profile`).
+  - Update Full Legal Name, Phone Number, and Email Address.
+  - Students can update their National ID, Date of Birth, Gender, and Residential Address.
+  - Instructors can update their NTSA License Number, Expiry Date, Specialization, and Address.
+  - Secure Password Change with current password verification and confirmation checks.
 - **Administrator:** Full administrative privileges, user management, financial oversight, instructor and fleet management, reporting.
 - **Receptionist:** Front-desk student registration, tuition fee recording, receipt printing, and lesson scheduling.
 - **Instructor:** Access to assigned student rosters, daily driving lesson schedules, lesson status updates, and practical assessment notes.

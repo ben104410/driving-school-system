@@ -59,6 +59,16 @@
       "phone": "+254795317428",
       "role": "Student",
       "status": "Active"
+    },
+    {
+      "user_id": 7,
+      "username": "salma_ali",
+      "password": "password123",
+      "full_name": "Salma Ali Mwinyi",
+      "email": "salma.mwinyi@gmail.com",
+      "phone": "+254799887766",
+      "role": "Student",
+      "status": "Active"
     }
   ],
   "instructors": [
@@ -160,13 +170,13 @@
       "student_id": 2,
       "user_id": null,
       "student_reg_no": "AA/MBA/2026/002",
-      "full_name": "Brian Kipchumba",
-      "gender": "Male",
-      "date_of_birth": "1999-11-20",
-      "phone": "+254711223344",
-      "email": "brian.k@yahoo.com",
-      "national_id": "35912840",
-      "address": "Likoni, Mombasa",
+      "full_name": "Salma Ali Mwinyi",
+      "gender": "Female",
+      "date_of_birth": "2002-09-18",
+      "phone": "+254799887766",
+      "email": "salma.mwinyi@gmail.com",
+      "national_id": "38192841",
+      "address": "Kizingo, Mombasa",
       "course_category": "Category B (Light Vehicle - Automatic)",
       "course_fee": 16000,
       "registration_date": "2026-10-05",
@@ -249,6 +259,22 @@
       "address": "Mombasa",
       "course_category": "Category A (Motorcycle)",
       "course_fee": 9500,
+      "registration_date": "2026-11-16",
+      "status": "Enrolled"
+    },
+    {
+      "student_id": 8,
+      "user_id": 7,
+      "student_reg_no": "AA/MBA/2026/008",
+      "full_name": "Salma Ali",
+      "gender": "Female",
+      "date_of_birth": "2002-09-18",
+      "phone": "+254711223344",
+      "email": "salma@gmail.com",
+      "national_id": "38192841",
+      "address": "Nyali, Mombasa",
+      "course_category": "Category B (Light Vehicle - Manual)",
+      "course_fee": 15000,
       "registration_date": "2026-11-16",
       "status": "Enrolled"
     }

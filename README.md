@@ -16,6 +16,7 @@ driving-school-system/
 │   ├── database.sql             <-- Complete MySQL database schema & seed data
 │   ├── index.php                <-- Landing & routing
 │   ├── login.php / logout.php   <-- Secure authentication & role switching
+│   ├── register.php             <-- Sign Up / Registration for Students, Instructors, Receptionists & Admins
 │   ├── dashboard.php            <-- Role-aware dynamic dashboard with KPI & charts
 │   ├── students.php             <-- Student directory, search & status filters
 │   ├── student_add.php          <-- Student registration form with auto reg no
