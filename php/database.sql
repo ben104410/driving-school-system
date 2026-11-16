@@ -88,6 +88,7 @@ CREATE TABLE `vehicles` (
   `transmission` ENUM('Manual', 'Automatic') NOT NULL DEFAULT 'Manual',
   `category` VARCHAR(50) NOT NULL DEFAULT 'Class B (Light Vehicle)',
   `status` ENUM('Available', 'In Use', 'Maintenance') NOT NULL DEFAULT 'Available',
+  `photo` VARCHAR(255) DEFAULT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`vehicle_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

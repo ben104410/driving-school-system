@@ -80,6 +80,8 @@ The system implements the **Three-Tier Architecture** documented in Section 4.6 
 
 ### D. Vehicle Fleet Management
 - Dual-pedal training cars and motorbikes.
+- **Vehicle Photo Upload (Choose File):** Option to choose and upload an image file (JPG, PNG, WebP) of each training vehicle, with live image thumbnail preview during registration and editing.
+- Photo gallery thumbnails displayed directly in the fleet management table, with graceful fallback vehicle icons when no picture is uploaded.
 - Registration plate, vehicle model, transmission (Manual / Automatic), and operational status (`Available`, `In Use`, `Maintenance`).
 
 ### E. Practical Lesson Scheduling with Conflict Detection

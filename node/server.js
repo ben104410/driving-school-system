@@ -1608,20 +1608,30 @@ const server = http.createServer((req, res) => {
                     <div class="table-responsive">
                         <table class="table custom-table table-hover mb-0">
                             <thead>
-                                <tr><th>Reg No</th><th>Model</th><th>Transmission</th><th>Category</th><th>Status</th><th class="text-end">Actions</th></tr>
+                                <tr><th style="width: 80px;">Photo</th><th>Reg No</th><th>Model</th><th>Transmission</th><th>Category</th><th>Status</th><th class="text-end">Actions</th></tr>
                             </thead>
                             <tbody>
                                 ${db.vehicles.map(v => `
                                     <tr>
+                                        <td>
+                                            ${v.photo ? `<img src="${v.photo}" alt="Vehicle" class="rounded border shadow-sm" style="width: 56px; height: 42px; object-fit: cover;">` : `
+                                            <div class="rounded border bg-light d-flex align-items-center justify-content-center text-muted shadow-sm" style="width: 56px; height: 42px;">
+                                                <i class="fa-solid fa-car fs-5 text-secondary"></i>
+                                            </div>
+                                            `}
+                                        </td>
                                         <td><span class="badge bg-light text-primary border font-monospace fs-6">${v.reg_no}</span></td>
                                         <td><strong>${v.model}</strong></td>
                                         <td><span class="badge bg-${v.transmission === 'Manual' ? 'primary' : 'info text-dark'}">${v.transmission}</span></td>
                                         <td>${v.category}</td>
                                         <td><span class="badge bg-${v.status === 'Available' ? 'success' : 'warning text-dark'}">${v.status}</span></td>
                                         <td class="text-end">
-                                            ${currentUser.role === 'Administrator' ? `
-                                            <a href="/vehicles/delete?id=${v.vehicle_id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Permanently delete vehicle ${v.reg_no} from the database?')" title="Delete Vehicle"><i class="fa-solid fa-trash"></i></a>
-                                            ` : ''}
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="/vehicles/edit?id=${v.vehicle_id}" class="btn btn-outline-secondary" title="Edit Vehicle"><i class="fa-solid fa-pen-to-square"></i></a>
+                                                ${currentUser.role === 'Administrator' ? `
+                                                <a href="/vehicles/delete?id=${v.vehicle_id}" class="btn btn-outline-danger" onclick="return confirm('Permanently delete vehicle ${v.reg_no} from the database?')" title="Delete Vehicle"><i class="fa-solid fa-trash"></i></a>
+                                                ` : ''}
+                                            </div>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -1656,6 +1666,119 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // -------------------------------------------------------------
+    // ROUTE: VEHICLES (EDIT)
+    // -------------------------------------------------------------
+    if (pathname === '/vehicles/edit') {
+        const vehId = Number(query.id || 0);
+        const vehicle = db.vehicles.find(v => v.vehicle_id === vehId);
+        if (!vehicle) {
+            res.writeHead(302, { 'Location': '/vehicles' });
+            res.end();
+            return;
+        }
+
+        if (method === 'GET') {
+            const content = `
+                <div class="mb-4">
+                    <a href="/vehicles" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Fleet</a>
+                    <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Vehicle: ${vehicle.reg_no}</h3>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 col-lg-8">
+                    <div class="card-body p-4">
+                        <form method="POST" action="/vehicles/edit?id=${vehId}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Registration Plate <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control text-uppercase" name="reg_no" value="${vehicle.reg_no}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Model & Description <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="model" value="${vehicle.model}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Transmission</label>
+                                    <select name="transmission" class="form-select">
+                                        <option value="Manual" ${vehicle.transmission === 'Manual' ? 'selected' : ''}>Manual</option>
+                                        <option value="Automatic" ${vehicle.transmission === 'Automatic' ? 'selected' : ''}>Automatic</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Category</label>
+                                    <input type="text" class="form-control" name="category" value="${vehicle.category}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Status</label>
+                                    <select name="status" class="form-select">
+                                        <option value="Available" ${vehicle.status === 'Available' ? 'selected' : ''}>Available</option>
+                                        <option value="In Use" ${vehicle.status === 'In Use' ? 'selected' : ''}>In Use</option>
+                                        <option value="Maintenance" ${vehicle.status === 'Maintenance' ? 'selected' : ''}>Maintenance</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold small"><i class="fa-solid fa-camera me-1 text-primary"></i> Vehicle Photo (Choose File)</label>
+                                    ${vehicle.photo ? `
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block mb-1">Current Photo:</small>
+                                        <img src="${vehicle.photo}" alt="Vehicle" class="rounded border shadow-sm" style="max-height: 120px; max-width: 180px; object-fit: cover;">
+                                    </div>
+                                    ` : ''}
+                                    <input type="file" id="edit_photo_file" accept="image/*" class="form-control" onchange="previewEditPhoto(this)">
+                                    <input type="hidden" name="photo" id="edit_photo_data" value="${vehicle.photo || ''}">
+                                    <small class="text-muted">Choose a new file to change the photo, or leave blank to keep current.</small>
+                                    <div id="edit_preview_box" class="mt-2" style="display: none;">
+                                        <small class="text-muted d-block mb-1">New Photo Preview:</small>
+                                        <img id="edit_preview_img" src="" alt="New Photo Preview" class="rounded border shadow-sm" style="max-height: 160px; max-width: 240px; object-fit: cover;">
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-4 text-end">
+                                    <a href="/vehicles" class="btn btn-outline-secondary me-2">Cancel</a>
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Save Changes</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <script>
+                function previewEditPhoto(input) {
+                    if (input.files && input.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            document.getElementById('edit_photo_data').value = e.target.result;
+                            document.getElementById('edit_preview_img').src = e.target.result;
+                            document.getElementById('edit_preview_box').style.display = 'block';
+                        };
+                        reader.readAsDataURL(input.files[0]);
+                    }
+                }
+                </script>
+            `;
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderLayout('Edit Vehicle', currentUser, content, '/vehicles'));
+            return;
+        } else if (method === 'POST') {
+            parseBody(req, body => {
+                vehicle.reg_no = (body.reg_no || vehicle.reg_no).toUpperCase().trim();
+                vehicle.model = (body.model || vehicle.model).trim();
+                vehicle.transmission = body.transmission || vehicle.transmission;
+                vehicle.category = body.category || vehicle.category;
+                vehicle.status = body.status || vehicle.status;
+                if (body.photo) {
+                    vehicle.photo = body.photo;
+                }
+                saveData(db);
+
+                res.writeHead(302, { 'Location': '/vehicles' });
+                res.end();
+            });
+            return;
+        }
+    }
+
     if (pathname === '/vehicles/add') {
         if (method === 'GET') {
             const content = `
@@ -1687,6 +1810,18 @@ const server = http.createServer((req, res) => {
                                     <label class="form-label fw-semibold">Category</label>
                                     <input type="text" class="form-control" name="category" value="Class B (Light Vehicle)">
                                 </div>
+
+                                <!-- Choose File for Vehicle Photo -->
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold"><i class="fa-solid fa-camera me-1 text-primary"></i> Vehicle Photo (Choose File)</label>
+                                    <input type="file" id="vehicle_photo_file" accept="image/*" class="form-control" onchange="previewVehiclePhoto(this)">
+                                    <input type="hidden" name="photo" id="vehicle_photo_data" value="">
+                                    <small class="text-muted">Choose an image file (JPG, PNG, WebP) of the training car or motorbike.</small>
+                                    <div id="photo_preview_box" class="mt-2" style="display: none;">
+                                        <img id="photo_preview" src="" alt="Vehicle Preview" class="rounded border shadow-sm" style="max-height: 160px; max-width: 240px; object-fit: cover;">
+                                    </div>
+                                </div>
+
                                 <div class="col-12 mt-4 text-end">
                                     <a href="/vehicles" class="btn btn-outline-secondary me-2">Cancel</a>
                                     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Save Vehicle</button>
@@ -1695,6 +1830,20 @@ const server = http.createServer((req, res) => {
                         </form>
                     </div>
                 </div>
+
+                <script>
+                function previewVehiclePhoto(input) {
+                    if (input.files && input.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            document.getElementById('vehicle_photo_data').value = e.target.result;
+                            document.getElementById('photo_preview').src = e.target.result;
+                            document.getElementById('photo_preview_box').style.display = 'block';
+                        };
+                        reader.readAsDataURL(input.files[0]);
+                    }
+                }
+                </script>
             `;
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(renderLayout('Add Vehicle', currentUser, content, '/vehicles'));
@@ -1708,7 +1857,8 @@ const server = http.createServer((req, res) => {
                     model: body.model.trim(),
                     transmission: body.transmission || 'Manual',
                     category: body.category || 'Class B (Light Vehicle)',
-                    status: 'Available'
+                    status: 'Available',
+                    photo: body.photo || null
                 });
                 saveData(db);
 

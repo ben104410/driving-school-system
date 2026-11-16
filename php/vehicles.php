@@ -23,6 +23,7 @@ $vehicles = $stmt->fetchAll();
             <table class="table custom-table table-hover mb-0">
                 <thead>
                     <tr>
+                        <th style="width: 80px;">Photo</th>
                         <th>Registration No</th>
                         <th>Vehicle Model</th>
                         <th>Transmission</th>
@@ -33,10 +34,19 @@ $vehicles = $stmt->fetchAll();
                 </thead>
                 <tbody>
                     <?php if (empty($vehicles)): ?>
-                        <tr><td colspan="6" class="text-center py-5 text-muted">No vehicles registered yet.</td></tr>
+                        <tr><td colspan="7" class="text-center py-5 text-muted">No vehicles registered yet.</td></tr>
                     <?php else: ?>
                         <?php foreach ($vehicles as $v): ?>
                             <tr>
+                                <td>
+                                    <?php if (!empty($v['photo'])): ?>
+                                        <img src="<?= htmlspecialchars($v['photo']) ?>" alt="Vehicle Photo" class="rounded border shadow-sm" style="width: 56px; height: 42px; object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="rounded border bg-light d-flex align-items-center justify-content-center text-muted shadow-sm" style="width: 56px; height: 42px;">
+                                            <i class="fa-solid fa-car fs-5 text-secondary"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
                                 <td><span class="badge bg-light text-primary border font-monospace fs-6"><?= htmlspecialchars($v['reg_no']) ?></span></td>
                                 <td class="fw-bold text-dark"><?= htmlspecialchars($v['model']) ?></td>
                                 <td>

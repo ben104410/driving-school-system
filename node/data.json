@@ -155,6 +155,15 @@
       "transmission": "Automatic",
       "category": "Class B (Light Vehicle)",
       "status": "Available"
+    },
+    {
+      "vehicle_id": 6,
+      "reg_no": "KDJ 999X",
+      "model": "Subaru Impreza Dual Control",
+      "transmission": "Manual",
+      "category": "Class B (Light Vehicle)",
+      "status": "Available",
+      "photo": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100' height='100' fill='navy'/><text x='10' y='55' fill='white'>CAR</text></svg>"
     }
   ],
   "students": [

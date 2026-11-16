@@ -12,7 +12,7 @@ driving-school-system/
 ├── php/                         <-- Pure PHP & MySQL Application (for XAMPP & KeMU submission)
 │   ├── config/                  <-- Database configuration (db.php)
 │   ├── includes/                <-- Header, navbar, sidebar, footer, helper functions
-│   ├── assets/                  <-- Custom CSS (style.css) & styling
+│   ├── assets/                  <-- Custom CSS (style.css) & vehicle photo uploads (uploads/vehicles/)
 │   ├── database.sql             <-- Complete MySQL database schema & seed data
 │   ├── index.php                <-- Landing & routing
 │   ├── login.php / logout.php   <-- Secure authentication & role switching
