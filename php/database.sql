@@ -1,6 +1,6 @@
 -- =============================================================
 -- ONLINE DRIVING SCHOOL MANAGEMENT SYSTEM
--- Case Study: AA Driving School - Mombasa Branch
+-- Case Study: Anza Auto Driving School - Mombasa Branch
 -- Developed for: Cynthia Jeruto (Kenya Methodist University)
 -- Database: driving_school_db
 -- =============================================================
@@ -159,22 +159,22 @@ CREATE TABLE `driving_test_results` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- -------------------------------------------------------------
--- SAMPLE SEED DATA (AA Driving School, Mombasa)
+-- SAMPLE SEED DATA (Anza Auto Driving School, Mombasa)
 -- Password for all default accounts is: password123
 -- (Hash: $2y$10$4yT00m7WkFp2z7yV7qT3ce3I0kL3w0.1dFk8fKq7QfJ0eQGkU2Riy or plain fallback supported)
 -- -------------------------------------------------------------
 
 INSERT INTO `users` (`user_id`, `username`, `password`, `full_name`, `email`, `phone`, `role`, `status`) VALUES
-(1, 'admin', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'Administrator (Cynthia Jeruto)', 'admin@aadrivingschool.co.ke', '+254712345678', 'Administrator', 'Active'),
-(2, 'receptionist', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'Fatuma Ali', 'reception@aadrivingschool.co.ke', '+254722334455', 'Receptionist', 'Active'),
-(3, 'instructor1', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'David Ochieng', 'david.ochieng@aadrivingschool.co.ke', '+254733445566', 'Instructor', 'Active'),
-(4, 'instructor2', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'Hassan Mwinyi', 'hassan.mwinyi@aadrivingschool.co.ke', '+254744556677', 'Instructor', 'Active'),
+(1, 'admin', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'Administrator (Cynthia Jeruto)', 'admin@anzaautodrivingschool.co.ke', '+254712345678', 'Administrator', 'Active'),
+(2, 'receptionist', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'Fatuma Ali', 'reception@anzaautodrivingschool.co.ke', '+254722334455', 'Receptionist', 'Active'),
+(3, 'instructor1', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'David Ochieng', 'david.ochieng@anzaautodrivingschool.co.ke', '+254733445566', 'Instructor', 'Active'),
+(4, 'instructor2', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'Hassan Mwinyi', 'hassan.mwinyi@anzaautodrivingschool.co.ke', '+254744556677', 'Instructor', 'Active'),
 (5, 'student1', '$2y$10$oY7IeJp8w6r1q1iS1kL5pOSXG0kH.5S1f4oT0eFk5eJ9jG2h1iI3q', 'Mary Wanjiku', 'mary.wanjiku@gmail.com', '+254755667788', 'Student', 'Active');
 
 INSERT INTO `instructors` (`instructor_id`, `user_id`, `instructor_no`, `full_name`, `gender`, `phone`, `email`, `license_no`, `license_expiry`, `specialization`, `address`, `status`) VALUES
-(1, 3, 'AA-INS-001', 'David Ochieng', 'Male', '+254733445566', 'david.ochieng@aadrivingschool.co.ke', 'NTSA/DI/2019/482', '2027-12-31', 'Class B (Light Manual & Automatic)', 'Nyali, Mombasa', 'Active'),
-(2, 4, 'AA-INS-002', 'Hassan Mwinyi', 'Male', '+254744556677', 'hassan.mwinyi@aadrivingschool.co.ke', 'NTSA/DI/2021/119', '2028-06-30', 'Class B (Light Vehicle) & Class A (Motorcycle)', 'Tudor, Mombasa', 'Active'),
-(3, NULL, 'AA-INS-003', 'Amina Bakari', 'Female', '+254799887766', 'amina.bakari@aadrivingschool.co.ke', 'NTSA/DI/2022/804', '2028-01-15', 'Class B Defensive Driving Specialist', 'Bamburi, Mombasa', 'Active');
+(1, 3, 'AA-INS-001', 'David Ochieng', 'Male', '+254733445566', 'david.ochieng@anzaautodrivingschool.co.ke', 'NTSA/DI/2019/482', '2027-12-31', 'Class B (Light Manual & Automatic)', 'Nyali, Mombasa', 'Active'),
+(2, 4, 'AA-INS-002', 'Hassan Mwinyi', 'Male', '+254744556677', 'hassan.mwinyi@anzaautodrivingschool.co.ke', 'NTSA/DI/2021/119', '2028-06-30', 'Class B (Light Vehicle) & Class A (Motorcycle)', 'Tudor, Mombasa', 'Active'),
+(3, NULL, 'AA-INS-003', 'Amina Bakari', 'Female', '+254799887766', 'amina.bakari@anzaautodrivingschool.co.ke', 'NTSA/DI/2022/804', '2028-01-15', 'Class B Defensive Driving Specialist', 'Bamburi, Mombasa', 'Active');
 
 INSERT INTO `vehicles` (`vehicle_id`, `reg_no`, `model`, `transmission`, `category`, `status`) VALUES
 (1, 'KDE 312M', 'Toyota Vitz (Dual Pedal Control)', 'Manual', 'Class B (Light Vehicle)', 'Available'),

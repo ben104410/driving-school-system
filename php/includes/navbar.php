@@ -10,7 +10,7 @@ $badgeColor = $roleColors[$_SESSION['role'] ?? 'Student'] ?? 'secondary';
 <header class="top-navbar">
     <div class="d-flex align-items-center">
         <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill me-3 d-none d-md-inline-block">
-            <i class="fa-solid fa-location-dot me-1"></i> AA Mombasa Branch
+            <i class="fa-solid fa-location-dot me-1"></i> Anza Auto Mombasa Branch
         </span>
         <span class="text-muted small d-none d-lg-inline-block">
             <i class="fa-regular fa-clock me-1"></i> <?= date('l, d F Y') ?>

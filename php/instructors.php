@@ -17,7 +17,7 @@ $instructors = $stmt->fetchAll();
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-chalkboard-user text-primary me-2"></i> Driving Instructors</h3>
-        <p class="text-muted mb-0">Certified NTSA instructors at AA Driving School, Mombasa.</p>
+        <p class="text-muted mb-0">Certified NTSA instructors at Anza Auto Driving School, Mombasa.</p>
     </div>
     <a href="instructor_add.php" class="btn btn-primary shadow-sm">
         <i class="fa-solid fa-user-plus me-1"></i> Add New Instructor

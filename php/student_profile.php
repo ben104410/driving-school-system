@@ -19,7 +19,7 @@ $balance = get_student_balance($student['student_id'], $pdo);
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-id-card text-primary me-2"></i> My Driving Course & Student Profile</h3>
-        <p class="text-muted mb-0">Official learner records at AA Driving School, Mombasa Branch.</p>
+        <p class="text-muted mb-0">Official learner records at Anza Auto Driving School, Mombasa Branch.</p>
     </div>
     <a href="profile.php" class="btn btn-primary shadow-sm"><i class="fa-solid fa-user-pen me-1"></i> Edit My Profile</a>
 </div>

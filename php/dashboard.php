@@ -122,7 +122,7 @@ if ($role === 'Student') {
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-1 text-dark">Welcome back, <?= htmlspecialchars($_SESSION['full_name']) ?>!</h3>
-        <p class="text-muted mb-0">Overview of AA Driving School Mombasa operations & records.</p>
+        <p class="text-muted mb-0">Overview of Anza Auto Driving School Mombasa operations & records.</p>
     </div>
     <?php if ($role === 'Administrator' || $role === 'Receptionist'): ?>
     <div class="d-flex gap-2">

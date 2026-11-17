@@ -1,6 +1,6 @@
 // =============================================================
 // ONLINE DRIVING SCHOOL MANAGEMENT SYSTEM
-// Case Study: AA Driving School - Mombasa Branch
+// Case Study: Anza Auto Driving School - Mombasa Branch
 // Ready-to-Run Node.js Server & Application
 // =============================================================
 
@@ -147,7 +147,7 @@ function renderLayout(title, user, content, currentPath = '') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title} | AA Driving School - Mombasa</title>
+    <title>${title} | Anza Auto Driving School - Mombasa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -182,7 +182,7 @@ function renderLayout(title, user, content, currentPath = '') {
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="brand-logo"><i class="fa-solid fa-car-side"></i></div>
-            <h5 class="mb-0 text-white fw-bold">AA Driving School</h5>
+            <h5 class="mb-0 text-white fw-bold">Anza Auto Driving School</h5>
             <small class="text-white-50">Mombasa Branch</small>
         </div>
         <ul class="sidebar-nav">${navItems}</ul>
@@ -192,7 +192,7 @@ function renderLayout(title, user, content, currentPath = '') {
         <header class="top-navbar">
             <div>
                 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill me-3">
-                    <i class="fa-solid fa-location-dot me-1"></i> AA Mombasa Branch
+                    <i class="fa-solid fa-location-dot me-1"></i> Anza Auto Mombasa Branch
                 </span>
                 <span class="text-muted small d-none d-md-inline-block">
                     <i class="fa-regular fa-clock me-1"></i> ${new Date().toDateString()}
@@ -214,7 +214,7 @@ function renderLayout(title, user, content, currentPath = '') {
         </div>
 
         <footer class="bg-white border-top py-3 px-4 text-center text-muted small mt-auto no-print">
-            <strong>Online Driving School Management System</strong> &bull; AA Mombasa Case Study &bull; Developed for <strong>Cynthia Jeruto</strong> (Kenya Methodist University)
+            <strong>Online Driving School Management System</strong> &bull; Anza Auto Mombasa Case Study &bull; Developed for <strong>Cynthia Jeruto</strong> (Kenya Methodist University)
         </footer>
     </div>
 </div>
@@ -230,7 +230,7 @@ function renderLoginPage(error = '') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | AA Driving School - Mombasa</title>
+    <title>Login | Anza Auto Driving School - Mombasa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -277,7 +277,7 @@ function renderLoginPage(error = '') {
 <div class="login-card">
     <div class="login-header">
         <div class="brand-badge"><i class="fa-solid fa-car-side"></i></div>
-        <h4 class="fw-bold mb-1">AA Driving School</h4>
+        <h4 class="fw-bold mb-1">Anza Auto Driving School</h4>
         <div class="text-white-50 small text-uppercase">Mombasa Branch &bull; Online Management System</div>
     </div>
     <div class="p-4">
@@ -302,7 +302,7 @@ function renderLoginPage(error = '') {
             </button>
         </form>
         <div class="text-center mt-3">
-            <span class="text-muted small">New to AA Driving School?</span>
+            <span class="text-muted small">New to Anza Auto Driving School?</span>
             <a href="/register" class="fw-bold text-primary text-decoration-none ms-1">Sign Up Here</a>
         </div>
         <hr class="my-4">
@@ -338,7 +338,7 @@ function renderRegisterPage(error = '') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create an Account | AA Driving School - Mombasa</title>
+    <title>Create an Account | Anza Auto Driving School - Mombasa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -391,7 +391,7 @@ function renderRegisterPage(error = '') {
 <div class="signup-card">
     <div class="signup-header">
         <div class="brand-badge"><i class="fa-solid fa-car-side"></i></div>
-        <h4 class="fw-bold mb-1">AA Driving School</h4>
+        <h4 class="fw-bold mb-1">Anza Auto Driving School</h4>
         <div class="text-white-50 small text-uppercase">Mombasa Branch &bull; Online Registration Portal</div>
     </div>
     <div class="p-4 p-md-5">
@@ -763,7 +763,7 @@ const server = http.createServer((req, res) => {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-1 text-dark">Welcome back, ${currentUser.full_name}!</h3>
-                    <p class="text-muted mb-0">Overview of AA Driving School Mombasa operations & records.</p>
+                    <p class="text-muted mb-0">Overview of Anza Auto Driving School Mombasa operations & records.</p>
                 </div>
                 ${currentUser.role === 'Administrator' || currentUser.role === 'Receptionist' ? `
                 <div class="d-flex gap-2">
@@ -1435,7 +1435,7 @@ const server = http.createServer((req, res) => {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-chalkboard-user text-primary me-2"></i> Driving Instructors</h3>
-                    <p class="text-muted mb-0">Certified NTSA instructors at AA Driving School, Mombasa.</p>
+                    <p class="text-muted mb-0">Certified NTSA instructors at Anza Auto Driving School, Mombasa.</p>
                 </div>
                 <a href="/instructors/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-user-plus me-1"></i> Add Instructor</a>
             </div>
@@ -1537,7 +1537,7 @@ const server = http.createServer((req, res) => {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" name="email" placeholder="instructor@aadrivingschool.co.ke" required>
+                                    <input type="email" class="form-control" name="email" placeholder="instructor@anzaautodrivingschool.co.ke" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">NTSA License No. <span class="text-danger">*</span></label>
@@ -1598,7 +1598,7 @@ const server = http.createServer((req, res) => {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-car text-primary me-2"></i> Training Vehicles (Fleet)</h3>
-                    <p class="text-muted mb-0">Dual-pedal training cars and motorbikes at AA Mombasa.</p>
+                    <p class="text-muted mb-0">Dual-pedal training cars and motorbikes at Anza Auto Driving School, Mombasa.</p>
                 </div>
                 <a href="/vehicles/add" class="btn btn-primary shadow-sm"><i class="fa-solid fa-plus me-1"></i> Add Vehicle</a>
             </div>
@@ -2345,7 +2345,7 @@ const server = http.createServer((req, res) => {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Official Receipt - ${payment.receipt_no} | AA Driving School Mombasa</title>
+    <title>Official Receipt - ${payment.receipt_no} | Anza Auto Driving School Mombasa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -2366,11 +2366,11 @@ const server = http.createServer((req, res) => {
     <div class="receipt-container">
         <div class="receipt-header">
             <div class="school-logo"><i class="fa-solid fa-car-side"></i></div>
-            <h3 class="fw-bold text-dark mb-1">AUTOMOBILE ASSOCIATION OF KENYA</h3>
-            <h5 class="fw-semibold text-primary mb-1">AA DRIVING SCHOOL &bull; MOMBASA BRANCH</h5>
+            <h3 class="fw-bold text-dark mb-1">ANZA AUTO DRIVING SCHOOL</h3>
+            <h5 class="fw-semibold text-primary mb-1">MOMBASA BRANCH</h5>
             <p class="text-muted small mb-0">
                 Moi Avenue, P.O. Box 90123 - 80100 Mombasa, Kenya<br>
-                Tel: +254 712 345 678 &bull; Email: mombasa@aadrivingschool.co.ke<br>
+                Tel: +254 712 345 678 &bull; Email: mombasa@anzaautodrivingschool.co.ke<br>
                 <em>NTSA Accredited Driving School &bull; License Ref: NTSA/DS/MBA/042</em>
             </p>
         </div>
@@ -2422,7 +2422,7 @@ const server = http.createServer((req, res) => {
         <div class="row pt-4 mt-4 border-top">
             <div class="col-6">
                 <small class="text-muted d-block mb-3">Issued by:</small>
-                <strong>Accounts Desk &bull; AA Mombasa</strong>
+                <strong>Accounts Desk &bull; Anza Auto Mombasa</strong>
             </div>
             <div class="col-6 text-end">
                 <div class="border border-2 border-secondary border-opacity-25 rounded-3 d-inline-block p-3 text-center" style="min-width: 170px;">
@@ -2597,7 +2597,7 @@ const server = http.createServer((req, res) => {
 
             <div class="card border-0 shadow-sm rounded-3 p-4">
                 <div class="text-center pb-3 border-bottom mb-4">
-                    <h4 class="fw-bold text-dark mb-1">AUTOMOBILE ASSOCIATION OF KENYA (AA DRIVING SCHOOL)</h4>
+                    <h4 class="fw-bold text-dark mb-1">ANZA AUTO DRIVING SCHOOL</h4>
                     <h5 class="fw-semibold text-primary mb-1">MOMBASA BRANCH &bull; OPERATIONAL PERFORMANCE REPORT</h5>
                     <p class="text-muted small mb-0">Generated on ${new Date().toDateString()} by ${currentUser.full_name}</p>
                 </div>
@@ -2759,7 +2759,7 @@ const server = http.createServer((req, res) => {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-id-card text-primary me-2"></i> My Driving Course & Student Profile</h3>
-                    <p class="text-muted mb-0">Official learner records at AA Driving School, Mombasa Branch.</p>
+                    <p class="text-muted mb-0">Official learner records at Anza Auto Driving School, Mombasa Branch.</p>
                 </div>
                 <a href="/profile" class="btn btn-primary shadow-sm"><i class="fa-solid fa-user-pen me-1"></i> Edit My Profile</a>
             </div>
@@ -2979,7 +2979,7 @@ const server = http.createServer((req, res) => {
                                     </li>
                                     <li class="list-group-item px-0 d-flex justify-content-between">
                                         <span class="text-muted">Branch:</span>
-                                        <span>AA Mombasa Branch</span>
+                                        <span>Anza Auto Mombasa Branch</span>
                                     </li>
                                     ${studentProfile ? `
                                     <li class="list-group-item px-0 d-flex justify-content-between">
@@ -3091,7 +3091,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
     console.log(`=============================================================`);
-    console.log(`ONLINE DRIVING SCHOOL MANAGEMENT SYSTEM (AA MOMBASA)`);
+    console.log(`ONLINE DRIVING SCHOOL MANAGEMENT SYSTEM (ANZA AUTO MOMBASA)`);
     console.log(`Server is running at: http://localhost:${PORT}`);
     console.log(`Default Accounts: admin / receptionist / instructor1 / student1`);
     console.log(`Password: password123`);

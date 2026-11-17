@@ -5,7 +5,7 @@
       "username": "admin",
       "password": "password123",
       "full_name": "Administrator (Cynthia Jeruto)",
-      "email": "admin@aadrivingschool.co.ke",
+      "email": "admin@anzaautodrivingschool.co.ke",
       "phone": "+254712345678",
       "role": "Administrator",
       "status": "Active"
@@ -15,7 +15,7 @@
       "username": "receptionist",
       "password": "password123",
       "full_name": "Fatuma Ali",
-      "email": "reception@aadrivingschool.co.ke",
+      "email": "reception@anzaautodrivingschool.co.ke",
       "phone": "+254722334455",
       "role": "Receptionist",
       "status": "Active"
@@ -25,7 +25,7 @@
       "username": "instructor1",
       "password": "password123",
       "full_name": "David Ochieng",
-      "email": "david.ochieng@aadrivingschool.co.ke",
+      "email": "david.ochieng@anzaautodrivingschool.co.ke",
       "phone": "+254733445566",
       "role": "Instructor",
       "status": "Active"
@@ -35,7 +35,7 @@
       "username": "instructor2",
       "password": "password123",
       "full_name": "Hassan Mwinyi",
-      "email": "hassan.mwinyi@aadrivingschool.co.ke",
+      "email": "hassan.mwinyi@anzaautodrivingschool.co.ke",
       "phone": "+254744556677",
       "role": "Instructor",
       "status": "Active"
@@ -89,7 +89,7 @@
       "full_name": "David Ochieng",
       "gender": "Male",
       "phone": "+254733445566",
-      "email": "david.ochieng@aadrivingschool.co.ke",
+      "email": "david.ochieng@anzaautodrivingschool.co.ke",
       "license_no": "NTSA/DI/2019/482",
       "license_expiry": "2027-12-31",
       "specialization": "Class B (Light Manual & Automatic)",
@@ -103,7 +103,7 @@
       "full_name": "Hassan Mwinyi",
       "gender": "Male",
       "phone": "+254744556677",
-      "email": "hassan.mwinyi@aadrivingschool.co.ke",
+      "email": "hassan.mwinyi@anzaautodrivingschool.co.ke",
       "license_no": "NTSA/DI/2021/119",
       "license_expiry": "2028-06-30",
       "specialization": "Class B (Light Vehicle) & Class A (Motorcycle)",
@@ -117,7 +117,7 @@
       "full_name": "Amina Bakari",
       "gender": "Female",
       "phone": "+254799887766",
-      "email": "amina.bakari@aadrivingschool.co.ke",
+      "email": "amina.bakari@anzaautodrivingschool.co.ke",
       "license_no": "NTSA/DI/2022/804",
       "license_expiry": "2028-01-15",
       "specialization": "Class B Defensive Driving Specialist",
@@ -507,6 +507,16 @@
       "status": "Pass",
       "examiner_name": "Amina Bakari",
       "remarks": "Good vehicle control; minor reminder on mirror check sequence."
+    },
+    {
+      "result_id": 4,
+      "student_id": 7,
+      "test_date": "2026-11-16",
+      "test_type": "Internal Theory Test",
+      "score": 90,
+      "status": "Pass",
+      "examiner_name": "Benjamin mwasya",
+      "remarks": "good grades keep it up"
     }
   ]
 }

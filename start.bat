@@ -1,7 +1,7 @@
 @echo off
-title AA Driving School Management System
+title Anza Auto Driving School Management System
 echo ========================================================
-echo  AA DRIVING SCHOOL MANAGEMENT SYSTEM - MOMBASA BRANCH
+echo  ANZA AUTO DRIVING SCHOOL MANAGEMENT SYSTEM - MOMBASA BRANCH
 echo  Academic Research Project - Cynthia Jeruto (KeMU)
 echo ========================================================
 echo.

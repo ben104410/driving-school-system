@@ -274,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </li>
                     <li class="list-group-item px-0 d-flex justify-content-between">
                         <span class="text-muted">Branch:</span>
-                        <span>AA Mombasa Branch</span>
+                        <span>Anza Auto Mombasa Branch</span>
                     </li>
                     <?php if ($studentProfile): ?>
                     <li class="list-group-item px-0 d-flex justify-content-between">

@@ -1,4 +1,4 @@
-# AA Driving School Management System (Mombasa Branch)
+# Anza Auto Driving School Management System (Mombasa Branch)
 **Research Project by Cynthia Jeruto &bull; Kenya Methodist University (KeMU)**
 
 An integrated online driving school management system developed to automate student registration, lesson scheduling, instructor and fleet management, fee collections (M-Pesa/Cash/Bank), printable receipt generation, driving test assessments, and management reporting.
@@ -37,7 +37,7 @@ driving-school-system/
 │   ├── schedule_status.php      <-- Mark lesson completed with instructor notes
 │   ├── payments.php             <-- Fee payment transaction directory
 │   ├── payment_add.php          <-- Record tuition fee installment (M-Pesa/Cash/Bank)
-│   ├── receipt.php              <-- Official printable receipt with AA Mombasa branding
+│   ├── receipt.php              <-- Official printable receipt with Anza Auto Mombasa branding
 │   ├── test_results.php         <-- Driving test assessments list
 │   ├── test_result_add.php      <-- Record internal theory, mock, or NTSA test
 │   ├── test_result_edit.php     <-- Edit test scores & examiner remarks

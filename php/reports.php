@@ -125,7 +125,7 @@ if ($reportType === 'tests') {
 <!-- Official Report Header (Visible on print & web) -->
 <div class="card border-0 shadow-sm rounded-3 p-4">
     <div class="text-center pb-3 border-bottom mb-4">
-        <h4 class="fw-bold text-dark mb-1">AUTOMOBILE ASSOCIATION OF KENYA (AA DRIVING SCHOOL)</h4>
+        <h4 class="fw-bold text-dark mb-1">ANZA AUTO DRIVING SCHOOL</h4>
         <h5 class="fw-semibold text-primary mb-1">MOMBASA BRANCH &bull; OFFICIAL OPERATIONAL REPORT</h5>
         <p class="text-muted small mb-0">
             <strong>Period:</strong> <?= format_date($startDate) ?> to <?= format_date($endDate) ?> &bull; 
@@ -324,7 +324,7 @@ if ($reportType === 'tests') {
     <?php endif; ?>
 
     <div class="mt-4 pt-3 border-top d-flex justify-content-between text-muted small">
-        <span>AA Driving School &bull; Mombasa Branch Management System</span>
+        <span>Anza Auto Driving School &bull; Mombasa Branch Management System</span>
         <span>End of Report</span>
     </div>
 </div>

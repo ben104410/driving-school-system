@@ -1,5 +1,5 @@
 # Online Driving School Management System
-### Case Study: Automobile Association of Kenya (AA Driving School - Mombasa Branch)
+### Case Study: Anza Auto Driving School (Mombasa Branch)
 **Academic Project:** Diploma in Business Information Technology (DBIT)  
 **Institution:** Kenya Methodist University (KeMU), School of Computing and Informatics  
 **Student Name:** Cynthia Jeruto  
@@ -9,7 +9,7 @@
 
 ## 1. Project Background & System Overview
 
-This project was developed based on the research proposal and system specifications for the **Online Driving School Management System at AA Driving School, Mombasa**.
+This project was developed based on the research proposal and system specifications for the **Online Driving School Management System at Anza Auto Driving School, Mombasa**.
 
 Traditionally, driving schools in Kenya have relied on paper-based record books and manual scheduling to manage daily operations. As highlighted in Chapter 4 of the research findings:
 - **Slow Student Registration:** 35% of operational challenges
@@ -35,7 +35,7 @@ The system implements the **Three-Tier Architecture** documented in Section 4.6 
    - **Node.js (Instant Preview & Demo Version):** Self-contained Node.js web server (`server.js`) with zero external dependency requirements, utilizing JSON persistence (`data.json`) for immediate evaluation on modern machines.
 
 3. **Database Layer:**
-   - **MySQL (`database.sql`):** Fully normalized relational schema with primary keys, foreign key constraints (`ON DELETE CASCADE` / `ON DELETE SET NULL`), and seed data for AA Mombasa.
+   - **MySQL (`database.sql`):** Fully normalized relational schema with primary keys, foreign key constraints (`ON DELETE CASCADE` / `ON DELETE SET NULL`), and seed data for Anza Auto Mombasa.
 
 ---
 

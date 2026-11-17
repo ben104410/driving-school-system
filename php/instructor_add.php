@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" name="email" placeholder="e.g. instructor@aadrivingschool.co.ke" required>
+                            <input type="email" class="form-control" name="email" placeholder="e.g. instructor@anzaautodrivingschool.co.ke" required>
                         </div>
 
                         <div class="col-md-6">

@@ -10,7 +10,7 @@ $vehicles = $stmt->fetchAll();
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-car text-primary me-2"></i> Training Vehicles (Fleet)</h3>
-        <p class="text-muted mb-0">Dual-pedal training cars and motorbikes at AA Driving School, Mombasa.</p>
+        <p class="text-muted mb-0">Dual-pedal training cars and motorbikes at Anza Auto Driving School, Mombasa.</p>
     </div>
     <a href="vehicle_add.php" class="btn btn-primary shadow-sm">
         <i class="fa-solid fa-plus me-1"></i> Add New Vehicle

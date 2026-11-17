@@ -38,7 +38,7 @@ $balanceRemaining = $courseFee - $paidSoFar;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Official Receipt - <?= htmlspecialchars($payment['receipt_no']) ?> | AA Driving School Mombasa</title>
+    <title>Official Receipt - <?= htmlspecialchars($payment['receipt_no']) ?> | Anza Auto Driving School Mombasa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -112,18 +112,18 @@ $balanceRemaining = $courseFee - $paidSoFar;
     </div>
 
     <div class="receipt-container">
-        <div class="watermark">AA MOMBASA</div>
+        <div class="watermark">ANZA AUTO</div>
 
         <!-- Header -->
         <div class="receipt-header text-center">
             <div class="school-logo">
                 <i class="fa-solid fa-car-side"></i>
             </div>
-            <h3 class="fw-bold text-dark mb-1">AUTOMOBILE ASSOCIATION OF KENYA</h3>
-            <h5 class="fw-semibold text-primary mb-1">AA DRIVING SCHOOL &bull; MOMBASA BRANCH</h5>
+            <h3 class="fw-bold text-dark mb-1">ANZA AUTO DRIVING SCHOOL</h3>
+            <h5 class="fw-semibold text-primary mb-1">MOMBASA BRANCH</h5>
             <p class="text-muted small mb-0">
                 Moi Avenue, P.O. Box 90123 - 80100 Mombasa, Kenya<br>
-                Tel: +254 712 345 678 / +254 722 334 455 &bull; Email: mombasa@aadrivingschool.co.ke<br>
+                Tel: +254 712 345 678 / +254 722 334 455 &bull; Email: mombasa@anzaautodrivingschool.co.ke<br>
                 <em>NTSA Accredited Driving School &bull; License Ref: NTSA/DS/MBA/042</em>
             </p>
         </div>
@@ -217,7 +217,7 @@ $balanceRemaining = $courseFee - $paidSoFar;
             <div class="col-6">
                 <small class="text-muted d-block mb-4">Received & Issued by:</small>
                 <div class="fw-bold"><?= htmlspecialchars($payment['recorder_name'] ?? 'Authorized Officer') ?></div>
-                <small class="text-muted">Accounts Desk &bull; AA Mombasa</small>
+                <small class="text-muted">Accounts Desk &bull; Anza Auto Mombasa</small>
             </div>
             <div class="col-6 text-end">
                 <div class="border border-2 border-secondary border-opacity-25 rounded-3 d-inline-block p-3 text-center" style="min-width: 180px;">
@@ -228,7 +228,7 @@ $balanceRemaining = $courseFee - $paidSoFar;
         </div>
 
         <div class="text-center text-muted small mt-4 pt-3 border-top">
-            <em>Thank you for training with AA Driving School Mombasa. Safe driving begins with professional training!</em>
+            <em>Thank you for training with Anza Auto Driving School Mombasa. Safe driving begins with professional training!</em>
         </div>
     </div>
 </div>

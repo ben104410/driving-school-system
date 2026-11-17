@@ -4,7 +4,7 @@
             <div class="container-fluid">
                 <div class="row align-items-center">
                     <div class="col-md-6 text-md-start">
-                        <strong>Online Driving School Management System</strong> &bull; AA Mombasa Case Study
+                        <strong>Online Driving School Management System</strong> &bull; Anza Auto Mombasa Case Study
                     </div>
                     <div class="col-md-6 text-md-end">
                         Developed by <strong>Cynthia Jeruto</strong> &bull; Diploma in BIT, Kenya Methodist University (KeMU)

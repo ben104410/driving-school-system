@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | AA Driving School - Mombasa</title>
+    <title>Login | Anza Auto Driving School - Mombasa</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="brand-badge">
             <i class="fa-solid fa-car-side"></i>
         </div>
-        <h4 class="fw-bold mb-1">AA Driving School</h4>
+        <h4 class="fw-bold mb-1">Anza Auto Driving School</h4>
         <div class="text-white-50 small text-uppercase tracking-wider">Mombasa Branch &bull; Online Management System</div>
     </div>
 
@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="text-center mt-3">
-            <span class="text-muted small">New to AA Driving School?</span>
+            <span class="text-muted small">New to Anza Auto Driving School?</span>
             <a href="register.php" class="fw-bold text-primary text-decoration-none ms-1">Sign Up Here</a>
         </div>
 

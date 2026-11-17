@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="mb-4">
     <a href="students.php" class="btn btn-outline-secondary btn-sm mb-2"><i class="fa-solid fa-arrow-left me-1"></i> Back to Student Directory</a>
     <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-user-plus text-primary me-2"></i> Register New Student</h3>
-    <p class="text-muted mb-0">Enroll a new learner at AA Driving School, Mombasa Branch.</p>
+    <p class="text-muted mb-0">Enroll a new learner at Anza Auto Driving School, Mombasa Branch.</p>
 </div>
 
 <?php if (!empty($error)): ?>

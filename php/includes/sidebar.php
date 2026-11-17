@@ -7,7 +7,7 @@ $userRole = $_SESSION['role'] ?? 'Student';
         <div class="brand-logo">
             <i class="fa-solid fa-car-side"></i>
         </div>
-        <h5 class="mb-0 text-white fw-bold">AA Driving School</h5>
+        <h5 class="mb-0 text-white fw-bold">Anza Auto Driving School</h5>
         <small class="text-white-50">Mombasa Branch</small>
     </div>
 
