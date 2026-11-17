@@ -2183,6 +2183,12 @@ const server = http.createServer((req, res) => {
                                         <td class="fw-bold text-success fs-6">${formatCurrency(p.amount)}</td>
                                         <td>
                                             <span class="badge ${p.payment_method === 'M-Pesa' ? 'bg-success' : (p.payment_method === 'Cash' ? 'bg-secondary' : 'bg-primary')}">${p.payment_method}</span>
+                                            ${p.payment_method === 'M-Pesa' ? `
+                                                <div class="small text-muted mt-1">
+                                                    <i class="fa-solid fa-mobile-screen text-success me-1"></i>Payer: ${p.payer_phone || 'Student'}
+                                                    <br><i class="fa-solid fa-arrow-down-to-bracket text-muted me-1"></i>To: <strong>${p.recipient_phone || '0715718022'}</strong>
+                                                </div>
+                                            ` : ''}
                                             ${p.card_type || p.card_number || p.bank_name ? `
                                                 <div class="small text-muted mt-1">
                                                     <i class="fa-solid fa-credit-card me-1 text-primary"></i><strong>${p.card_type || 'Card'}</strong>${p.bank_name ? ` &bull; ${p.bank_name}` : ''}
@@ -2213,6 +2219,9 @@ const server = http.createServer((req, res) => {
     if (pathname === '/payments/add') {
         if (method === 'GET') {
             const preStudentId = Number(query.student_id || 0);
+            const preStudent = db.students.find(s => s.student_id === preStudentId) || {};
+            const rawPrePhone = preStudent.phone || '';
+            const preStudentPhone = rawPrePhone.startsWith('+254') ? '0' + rawPrePhone.substring(4) : (rawPrePhone.startsWith('254') ? '0' + rawPrePhone.substring(3) : rawPrePhone);
             const nextId = db.payments.length + 1;
             const rctNo = `RCT-${new Date().getFullYear()}-${String(nextId).padStart(4, '0')}`;
 
@@ -2234,7 +2243,11 @@ const server = http.createServer((req, res) => {
                                     <label class="form-label fw-semibold">Select Student <span class="text-danger">*</span></label>
                                     <select name="student_id" id="student_id" class="form-select" onchange="handleStudentSelect(this)" required>
                                         <option value="">-- Choose Student --</option>
-                                        ${db.students.map(s => `<option value="${s.student_id}" data-name="${s.full_name}" ${preStudentId === s.student_id ? 'selected' : ''}>${s.full_name} (${s.student_reg_no})</option>`).join('')}
+                                        ${db.students.map(s => {
+                                            const p = s.phone || '';
+                                            const cleanP = p.startsWith('+254') ? '0' + p.substring(4) : (p.startsWith('254') ? '0' + p.substring(3) : p);
+                                            return `<option value="${s.student_id}" data-name="${s.full_name}" data-phone="${cleanP}" ${preStudentId === s.student_id ? 'selected' : ''}>${s.full_name} (${s.student_reg_no}) &bull; Tel: ${cleanP || 'N/A'}</option>`;
+                                        }).join('')}
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -2248,41 +2261,72 @@ const server = http.createServer((req, res) => {
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
                                     <select name="payment_method" id="payment_method" class="form-select fw-semibold" onchange="togglePaymentBoxes()" required>
-                                        <option value="M-Pesa">M-Pesa (Mobile Money)</option>
-                                        <option value="Bank Transfer" selected>Bank Transfer (Wire / Electronic)</option>
+                                        <option value="M-Pesa" selected>M-Pesa (STK Push to Student)</option>
+                                        <option value="Bank Transfer">Bank Transfer (Wire / Electronic)</option>
                                         <option value="Credit / Debit Card">Credit / Debit Card</option>
                                         <option value="Cash">Cash Payment</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Reference Code / Transaction No.</label>
-                                    <input type="text" class="form-control font-monospace" name="reference_no" id="reference_no" placeholder="e.g. NCBA-CARD-849102">
+                                    <input type="text" class="form-control font-monospace" name="reference_no" id="reference_no" placeholder="e.g. QA189KL93Z">
                                 </div>
 
-                                <!-- Lipa na M-Pesa STK Push Card with Default Number 0715718022 -->
-                                <div class="col-12" id="mpesa_prompt_box" style="display: none;">
-                                    <div class="p-3 rounded-3 border bg-success bg-opacity-10 border-success border-opacity-25">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="fw-bold text-success"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa STK Push Prompt</span>
-                                            <span class="badge bg-success">Default Phone: 0715718022</span>
+                                <!-- Lipa na M-Pesa STK Push Card: Prompts Student Phone -> Sends to School Default Number 0715718022 -->
+                                <div class="col-12" id="mpesa_prompt_box">
+                                    <div class="p-3 rounded-3 border bg-success bg-opacity-10 border-success border-opacity-25 shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-success border-opacity-25">
+                                            <span class="fw-bold text-success fs-6">
+                                                <i class="fa-solid fa-mobile-screen-button me-2"></i> Lipa na M-Pesa STK Push Transfer
+                                            </span>
+                                            <span class="badge bg-success text-white px-3 py-1">
+                                                <i class="fa-solid fa-arrow-down-to-bracket me-1"></i> Money Goes To: 0715718022
+                                            </span>
                                         </div>
-                                        <p class="text-muted small mb-2">
-                                            Trigger an instant Safaricom M-Pesa STK push prompt to <strong>0715718022</strong> to request tuition fee payment.
-                                        </p>
-                                        <div class="row g-2 align-items-center">
-                                            <div class="col-md-6">
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-white"><i class="fa-solid fa-phone text-muted"></i></span>
-                                                    <input type="text" class="form-control fw-bold font-monospace" id="mpesa_phone" value="0715718022" placeholder="0715718022">
+
+                                        <div class="alert alert-light border border-success border-opacity-25 py-2 px-3 small mb-3 text-muted">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fa-solid fa-circle-info text-success fs-5 me-2 flex-shrink-0"></i>
+                                                <div>
+                                                    Tuition fees are deposited directly to the <strong>School M-Pesa Account (0715718022 &bull; Anza Auto Driving School)</strong>. The paying student is prompted on their mobile handset to enter their M-Pesa PIN to complete the transfer.
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        <div class="row g-3 align-items-end">
+                                            <!-- School Receiving Account (Funds Destination) -->
                                             <div class="col-md-6">
-                                                <button type="button" class="btn btn-success w-100 fw-semibold" id="btn_stk_push" onclick="triggerMpesaSTKPush()">
-                                                    <i class="fa-solid fa-paper-plane me-1"></i> Prompt M-Pesa to 0715718022
+                                                <label class="form-label fw-semibold small text-dark mb-1">
+                                                    <i class="fa-solid fa-building-columns text-success me-1"></i> School Receiving Account (Where Money Goes)
+                                                </label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-white text-success fw-bold"><i class="fa-solid fa-school me-1"></i> Recipient</span>
+                                                    <input type="text" class="form-control fw-bold font-monospace bg-light text-dark" id="school_mpesa_phone" name="school_mpesa_phone" value="0715718022" readonly>
+                                                    <span class="input-group-text bg-white small text-muted">Anza Auto M-Pesa</span>
+                                                </div>
+                                                <small class="text-muted" style="font-size: 0.75rem;">Default school business line where student payments are deposited.</small>
+                                            </div>
+
+                                            <!-- Student Paying Phone (Prompted Handset) -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small text-dark mb-1">
+                                                    <i class="fa-solid fa-mobile-screen text-primary me-1"></i> Student Phone to Prompt (Payer Handset) <span class="text-danger">*</span>
+                                                </label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-white text-primary"><i class="fa-solid fa-phone"></i></span>
+                                                    <input type="text" class="form-control fw-bold font-monospace" id="student_mpesa_phone" name="student_mpesa_phone" value="${preStudentPhone}" placeholder="e.g. 0755667788">
+                                                </div>
+                                                <small class="text-muted" style="font-size: 0.75rem;">Student handset prompted to enter M-Pesa PIN and send funds to 0715718022.</small>
+                                            </div>
+
+                                            <!-- STK Push Action Button -->
+                                            <div class="col-12 mt-2">
+                                                <button type="button" class="btn btn-success w-100 fw-semibold shadow-sm" id="btn_stk_push" onclick="triggerMpesaSTKPush()">
+                                                    <i class="fa-solid fa-paper-plane me-1"></i> Prompt Student Handset to Send Money to 0715718022
                                                 </button>
+                                                <div id="mpesa_status" class="mt-2 small" style="display: none;"></div>
                                             </div>
                                         </div>
-                                        <div id="mpesa_status" class="mt-2 small" style="display: none;"></div>
                                     </div>
                                 </div>
 
@@ -2419,16 +2463,28 @@ const server = http.createServer((req, res) => {
 
                 <script>
                 function triggerMpesaSTKPush() {
-                    const phone = document.getElementById('mpesa_phone').value || '0715718022';
+                    let studentPhone = (document.getElementById('student_mpesa_phone').value || '').trim();
+                    if (!studentPhone) {
+                        const sel = document.getElementById('student_id');
+                        if (sel && sel.selectedIndex > 0) {
+                            studentPhone = (sel.options[sel.selectedIndex].getAttribute('data-phone') || '').trim();
+                        }
+                    }
+                    if (!studentPhone) {
+                        studentPhone = '0755667788';
+                    }
+                    document.getElementById('student_mpesa_phone').value = studentPhone;
+
+                    const schoolPhone = (document.getElementById('school_mpesa_phone').value || '0715718022').trim();
                     const amount = document.querySelector('input[name="amount"]').value || '5000';
                     const btn = document.getElementById('btn_stk_push');
                     const statusBox = document.getElementById('mpesa_status');
 
                     btn.disabled = true;
-                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Prompting ' + phone + '...';
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Sending STK Push to ' + studentPhone + '...';
                     statusBox.style.display = 'block';
                     statusBox.className = 'mt-2 small alert alert-info py-2 mb-0';
-                    statusBox.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> M-Pesa STK Push prompt sent to <strong>' + phone + '</strong> for KES ' + amount + '. Awaiting customer PIN...';
+                    statusBox.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> M-Pesa STK Push prompt sent to student handset (<strong>' + studentPhone + '</strong>). Prompting student to enter M-Pesa PIN and transfer <strong>KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</strong> to School Account <strong>' + schoolPhone + ' (Anza Auto Driving School)</strong>...';
 
                     setTimeout(() => {
                         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -2436,9 +2492,9 @@ const server = http.createServer((req, res) => {
                         document.getElementById('reference_no').value = code;
 
                         btn.disabled = false;
-                        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Prompt Sent (Resend)';
+                        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> STK Push Verified (Resend)';
                         statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
-                        statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>Payment Confirmed!</strong> M-Pesa receipt code <code>' + code + '</code> confirmed from <strong>' + phone + '</strong>.';
+                        statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>Payment Successful!</strong> Student <strong>' + studentPhone + '</strong> confirmed PIN and sent KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' to School Receiving Account <strong>' + schoolPhone + '</strong>. M-Pesa Code: <code>' + code + '</code>.';
                     }, 1100);
                 }
 
@@ -2547,10 +2603,18 @@ const server = http.createServer((req, res) => {
 
                 function handleStudentSelect(select) {
                     const selectedOpt = select.options[select.selectedIndex];
-                    const name = selectedOpt ? selectedOpt.getAttribute('data-name') : '';
+                    if (!selectedOpt) return;
+                    const name = selectedOpt.getAttribute('data-name') || '';
+                    const phone = selectedOpt.getAttribute('data-phone') || '';
+
                     const cardholderInput = document.getElementById('cardholder_name');
                     if (cardholderInput && (!cardholderInput.value || cardholderInput.value === 'Authorized Cardholder')) {
                         if (name) cardholderInput.value = name;
+                    }
+
+                    const mpesaPayerInput = document.getElementById('student_mpesa_phone');
+                    if (mpesaPayerInput && phone) {
+                        mpesaPayerInput.value = phone;
                     }
                 }
 
@@ -2577,15 +2641,17 @@ const server = http.createServer((req, res) => {
                     student_id: Number(body.student_id),
                     amount: Number(body.amount),
                     payment_date: body.payment_date,
-                    payment_method: body.payment_method || 'Bank Transfer',
+                    payment_method: body.payment_method || 'M-Pesa',
                     reference_no: body.reference_no || '',
+                    payer_phone: (body.student_mpesa_phone || '').trim(),
+                    recipient_phone: (body.school_mpesa_phone || '0715718022').trim(),
                     card_type: body.card_type || (body.payment_method === 'Credit / Debit Card' ? 'Debit Card' : (body.payment_method === 'Bank Transfer' ? 'Debit Card' : '')),
                     card_number: maskedCard,
                     cardholder_name: (body.cardholder_name || '').trim(),
                     card_expiry: (body.card_expiry || '').trim(),
                     bank_name: (body.bank_name || '').trim(),
                     bank_account_no: (body.bank_account_no || '').trim(),
-                    notes: body.notes || (body.bank_name ? `${body.bank_name} ${body.card_type || 'Transfer'}` : 'Tuition fee installment'),
+                    notes: body.notes || (body.payment_method === 'M-Pesa' ? `M-Pesa from ${body.student_mpesa_phone || 'student'} to 0715718022` : (body.bank_name ? `${body.bank_name} ${body.card_type || 'Transfer'}` : 'Tuition fee installment')),
                     recorded_by: currentUser.user_id
                 };
 
@@ -2677,7 +2743,13 @@ const server = http.createServer((req, res) => {
                     <td>
                         <strong>Tuition Fee Payment</strong>
                         <div class="small text-muted">${payment.notes || 'Tuition fee installment'}</div>
-                        ${payment.payment_method === 'M-Pesa' ? '<div class="small text-success mt-1"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa &bull; Prompt Phone: <strong>0715718022</strong></div>' : ''}
+                        ${payment.payment_method === 'M-Pesa' ? `
+                            <div class="small text-success mt-2 p-2 bg-light rounded border border-success border-opacity-25">
+                                <div class="fw-bold"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa STK Transfer</div>
+                                <div>Payer Mobile (Student): <strong class="font-monospace text-dark">${payment.payer_phone || student.phone || 'Student Handset'}</strong></div>
+                                <div>Destination (School M-Pesa): <strong class="font-monospace text-dark">${payment.recipient_phone || '0715718022'}</strong> (Anza Auto Driving School)</div>
+                            </div>
+                        ` : ''}
                         ${(payment.payment_method === 'Bank Transfer' || payment.payment_method === 'Credit / Debit Card' || payment.card_number || payment.bank_name) ? `
                             <div class="small text-primary mt-2 p-2 bg-light rounded border border-primary border-opacity-25">
                                 <div class="fw-bold"><i class="fa-solid fa-credit-card me-1"></i> ${payment.card_type || 'Debit Card'} &bull; ${payment.bank_name || 'Bank Transfer'}</div>

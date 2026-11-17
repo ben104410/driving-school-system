@@ -479,7 +479,9 @@
       "payment_date": "2026-11-16",
       "payment_method": "M-Pesa",
       "reference_no": "QA928KL10X",
-      "notes": "Tuition fee installment",
+      "payer_phone": "0755667788",
+      "recipient_phone": "0715718022",
+      "notes": "Lipa na M-Pesa to 0715718022",
       "recorded_by": 2
     },
     {

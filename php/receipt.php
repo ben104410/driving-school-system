@@ -180,7 +180,11 @@ $balanceRemaining = $courseFee - $paidSoFar;
                         <strong>Tuition Fee Payment</strong>
                         <div class="small text-muted"><?= htmlspecialchars($payment['notes'] ?? 'Tuition fee installment') ?></div>
                         <?php if ($payment['payment_method'] === 'M-Pesa'): ?>
-                        <div class="small text-success mt-1"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa &bull; Prompt Phone: <strong>0715718022</strong></div>
+                        <div class="small text-success mt-2 p-2 bg-light rounded border border-success border-opacity-25">
+                            <div class="fw-bold"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa STK Transfer</div>
+                            <div>Paid from Student: <strong class="font-monospace text-dark"><?= htmlspecialchars($payment['student_phone'] ?? 'Student Handset') ?></strong></div>
+                            <div>Destination (School M-Pesa): <strong class="font-monospace text-dark">0715718022</strong> (Anza Auto Driving School)</div>
+                        </div>
                         <?php endif; ?>
                         <?php if ($payment['payment_method'] === 'Bank Transfer' || $payment['payment_method'] === 'Credit / Debit Card' || stripos($payment['notes'] ?? '', 'Card') !== false): ?>
                         <div class="small text-primary mt-1 p-2 bg-light rounded border border-primary border-opacity-25">
