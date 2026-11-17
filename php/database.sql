@@ -128,7 +128,7 @@ CREATE TABLE `payments` (
   `student_id` INT(11) NOT NULL,
   `amount` DECIMAL(10,2) NOT NULL,
   `payment_date` DATE NOT NULL,
-  `payment_method` ENUM('M-Pesa', 'Cash', 'Bank Transfer') NOT NULL DEFAULT 'M-Pesa',
+  `payment_method` ENUM('M-Pesa', 'Cash', 'Bank Transfer', 'Credit / Debit Card') NOT NULL DEFAULT 'Bank Transfer',
   `reference_no` VARCHAR(50) DEFAULT NULL,
   `notes` VARCHAR(255) DEFAULT 'Tuition fee installment',
   `recorded_by` INT(11) DEFAULT NULL,

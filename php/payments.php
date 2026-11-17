@@ -67,8 +67,9 @@ $totalCollected = array_sum(array_column($payments, 'amount'));
                 <select name="method" class="form-select">
                     <option value="">-- All Payment Methods --</option>
                     <option value="M-Pesa" <?= ($methodFilter === 'M-Pesa') ? 'selected' : '' ?>>M-Pesa</option>
-                    <option value="Cash" <?= ($methodFilter === 'Cash') ? 'selected' : '' ?>>Cash</option>
                     <option value="Bank Transfer" <?= ($methodFilter === 'Bank Transfer') ? 'selected' : '' ?>>Bank Transfer</option>
+                    <option value="Credit / Debit Card" <?= ($methodFilter === 'Credit / Debit Card') ? 'selected' : '' ?>>Credit / Debit Card</option>
+                    <option value="Cash" <?= ($methodFilter === 'Cash') ? 'selected' : '' ?>>Cash</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -118,11 +119,15 @@ $totalCollected = array_sum(array_column($payments, 'amount'));
                                     <?php
                                     $mBadge = [
                                         'M-Pesa' => 'success',
-                                        'Cash' => 'primary',
-                                        'Bank Transfer' => 'info text-dark'
-                                    ][$p['payment_method']] ?? 'secondary';
+                                        'Cash' => 'secondary',
+                                        'Bank Transfer' => 'primary',
+                                        'Credit / Debit Card' => 'info text-dark'
+                                    ][$p['payment_method']] ?? 'primary';
                                     ?>
                                     <span class="badge bg-<?= $mBadge ?>"><?= htmlspecialchars($p['payment_method']) ?></span>
+                                    <?php if (!empty($p['notes']) && $p['notes'] !== 'Tuition fee installment'): ?>
+                                        <div class="small text-muted mt-1"><i class="fa-solid fa-credit-card me-1 text-primary"></i><?= htmlspecialchars($p['notes']) ?></div>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="font-monospace small"><?= htmlspecialchars($p['reference_no'] ?? '-') ?></td>
                                 <td><small class="text-muted"><?= htmlspecialchars($p['recorder_name'] ?? 'System') ?></small></td>

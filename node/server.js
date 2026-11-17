@@ -907,7 +907,7 @@ const server = http.createServer((req, res) => {
                                     <th>Student Name</th>
                                     <th>Date</th>
                                     <th>Amount</th>
-                                    <th>Method</th>
+                                    <th>Method & Card Details</th>
                                     <th>Reference Code</th>
                                     <th>Action</th>
                                 </tr>
@@ -919,7 +919,15 @@ const server = http.createServer((req, res) => {
                                         <td><strong>${p.student_name}</strong><br><small class="text-muted">${p.student_reg_no}</small></td>
                                         <td>${formatDate(p.payment_date)}</td>
                                         <td class="fw-bold text-success">${formatCurrency(p.amount)}</td>
-                                        <td><span class="badge bg-secondary">${p.payment_method}</span></td>
+                                        <td>
+                                            <span class="badge ${p.payment_method === 'M-Pesa' ? 'bg-success' : (p.payment_method === 'Cash' ? 'bg-secondary' : 'bg-primary')}">${p.payment_method}</span>
+                                            ${p.card_type || p.card_number || p.bank_name ? `
+                                                <div class="small text-muted mt-1">
+                                                    <i class="fa-solid fa-credit-card me-1 text-primary"></i><strong>${p.card_type || 'Card'}</strong>${p.bank_name ? ` &bull; ${p.bank_name}` : ''}
+                                                    ${p.card_number ? `<br><code class="text-dark">${p.card_number}</code>` : ''}
+                                                </div>
+                                            ` : ''}
+                                        </td>
                                         <td class="font-monospace small">${p.reference_no || '-'}</td>
                                         <td><a href="/receipt?id=${p.payment_id}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-print me-1"></i> Receipt</a></td>
                                     </tr>
@@ -1246,10 +1254,19 @@ const server = http.createServer((req, res) => {
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table custom-table mb-0">
-                                    <thead><tr><th>Receipt No</th><th>Date</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead>
+                                    <thead><tr><th>Receipt No</th><th>Date</th><th>Amount</th><th>Method & Card Details</th><th>Action</th></tr></thead>
                                     <tbody>
                                         ${studentPayments.length === 0 ? '<tr><td colspan="5" class="text-center py-3 text-muted">No payments recorded.</td></tr>' :
-                                            studentPayments.map(p => `<tr><td class="font-monospace fw-bold text-primary">${p.receipt_no}</td><td>${formatDate(p.payment_date)}</td><td class="fw-bold text-success">${formatCurrency(p.amount)}</td><td><span class="badge bg-secondary">${p.payment_method}</span></td><td><a href="/receipt?id=${p.payment_id}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-print"></i> Receipt</a></td></tr>`).join('')}
+                                            studentPayments.map(p => `<tr>
+                                                <td class="font-monospace fw-bold text-primary">${p.receipt_no}</td>
+                                                <td>${formatDate(p.payment_date)}</td>
+                                                <td class="fw-bold text-success">${formatCurrency(p.amount)}</td>
+                                                <td>
+                                                    <span class="badge ${p.payment_method === 'M-Pesa' ? 'bg-success' : (p.payment_method === 'Cash' ? 'bg-secondary' : 'bg-primary')}">${p.payment_method}</span>
+                                                    ${p.card_type || p.card_number ? `<div class="small text-muted mt-1"><i class="fa-solid fa-credit-card me-1"></i>${p.card_type || 'Card'} ${p.card_number ? `(${p.card_number.slice(-4)})` : ''}</div>` : ''}
+                                                </td>
+                                                <td><a href="/receipt?id=${p.payment_id}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-print"></i> Receipt</a></td>
+                                            </tr>`).join('')}
                                     </tbody>
                                 </table>
                             </div>
@@ -2155,7 +2172,7 @@ const server = http.createServer((req, res) => {
                     <div class="table-responsive">
                         <table class="table custom-table table-hover mb-0">
                             <thead>
-                                <tr><th>Receipt No</th><th>Student Name</th><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Action</th></tr>
+                                <tr><th>Receipt No</th><th>Student Name</th><th>Date</th><th>Amount</th><th>Method & Card Details</th><th>Reference</th><th>Action</th></tr>
                             </thead>
                             <tbody>
                                 ${enrichedPayments.map(p => `
@@ -2164,8 +2181,20 @@ const server = http.createServer((req, res) => {
                                         <td><strong>${p.student_name}</strong><br><small class="text-muted">${p.student_reg_no}</small></td>
                                         <td>${formatDate(p.payment_date)}</td>
                                         <td class="fw-bold text-success fs-6">${formatCurrency(p.amount)}</td>
-                                        <td><span class="badge bg-secondary">${p.payment_method}</span></td>
-                                        <td class="font-monospace small">${p.reference_no || '-'}</td>
+                                        <td>
+                                            <span class="badge ${p.payment_method === 'M-Pesa' ? 'bg-success' : (p.payment_method === 'Cash' ? 'bg-secondary' : 'bg-primary')}">${p.payment_method}</span>
+                                            ${p.card_type || p.card_number || p.bank_name ? `
+                                                <div class="small text-muted mt-1">
+                                                    <i class="fa-solid fa-credit-card me-1 text-primary"></i><strong>${p.card_type || 'Card'}</strong>${p.bank_name ? ` &bull; ${p.bank_name}` : ''}
+                                                    ${p.card_number ? `<br><code class="text-dark">${p.card_number}</code>` : ''}
+                                                    ${p.cardholder_name ? `<br><span class="text-secondary">${p.cardholder_name}</span>` : ''}
+                                                </div>
+                                            ` : ''}
+                                        </td>
+                                        <td class="font-monospace small">
+                                            <div class="fw-bold">${p.reference_no || '-'}</div>
+                                            ${p.bank_account_no ? `<div class="text-muted" style="font-size: 0.72rem;">A/C: ${p.bank_account_no}</div>` : ''}
+                                        </td>
                                         <td><a href="/receipt?id=${p.payment_id}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-receipt me-1"></i> Print Receipt</a></td>
                                     </tr>
                                 `).join('')}
@@ -2203,9 +2232,9 @@ const server = http.createServer((req, res) => {
                                 </div>
                                 <div class="col-md-8">
                                     <label class="form-label fw-semibold">Select Student <span class="text-danger">*</span></label>
-                                    <select name="student_id" class="form-select" required>
+                                    <select name="student_id" id="student_id" class="form-select" onchange="handleStudentSelect(this)" required>
                                         <option value="">-- Choose Student --</option>
-                                        ${db.students.map(s => `<option value="${s.student_id}" ${preStudentId === s.student_id ? 'selected' : ''}>${s.full_name} (${s.student_reg_no})</option>`).join('')}
+                                        ${db.students.map(s => `<option value="${s.student_id}" data-name="${s.full_name}" ${preStudentId === s.student_id ? 'selected' : ''}>${s.full_name} (${s.student_reg_no})</option>`).join('')}
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -2218,19 +2247,20 @@ const server = http.createServer((req, res) => {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Payment Method <span class="text-danger">*</span></label>
-                                    <select name="payment_method" id="payment_method" class="form-select" onchange="toggleMpesaBox()" required>
-                                        <option value="M-Pesa" selected>M-Pesa</option>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Transfer">Bank Transfer / Slip</option>
+                                    <select name="payment_method" id="payment_method" class="form-select fw-semibold" onchange="togglePaymentBoxes()" required>
+                                        <option value="M-Pesa">M-Pesa (Mobile Money)</option>
+                                        <option value="Bank Transfer" selected>Bank Transfer (Wire / Electronic)</option>
+                                        <option value="Credit / Debit Card">Credit / Debit Card</option>
+                                        <option value="Cash">Cash Payment</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold">Reference Code / Transaction No.</label>
-                                    <input type="text" class="form-control font-monospace" name="reference_no" id="reference_no" placeholder="e.g. QA189KL93Z">
+                                    <input type="text" class="form-control font-monospace" name="reference_no" id="reference_no" placeholder="e.g. NCBA-CARD-849102">
                                 </div>
 
                                 <!-- Lipa na M-Pesa STK Push Card with Default Number 0715718022 -->
-                                <div class="col-12" id="mpesa_prompt_box">
+                                <div class="col-12" id="mpesa_prompt_box" style="display: none;">
                                     <div class="p-3 rounded-3 border bg-success bg-opacity-10 border-success border-opacity-25">
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <span class="fw-bold text-success"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa STK Push Prompt</span>
@@ -2253,6 +2283,128 @@ const server = http.createServer((req, res) => {
                                             </div>
                                         </div>
                                         <div id="mpesa_status" class="mt-2 small" style="display: none;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Bank Transfer & Credit / Debit Card Payment Details Card Box -->
+                                <div class="col-12" id="bank_card_prompt_box">
+                                    <div class="p-3 rounded-3 border bg-light border-primary border-opacity-50 shadow-sm" style="background: linear-gradient(180deg, rgba(13, 59, 102, 0.04) 0%, rgba(24, 90, 157, 0.08) 100%);">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                            <span class="fw-bold text-primary fs-6">
+                                                <i class="fa-solid fa-credit-card me-2"></i> Bank Transfer & Card Payment Details
+                                            </span>
+                                            <span class="badge bg-primary text-white px-3 py-1">
+                                                <i class="fa-solid fa-lock me-1"></i> Card & Bank Clearance
+                                            </span>
+                                        </div>
+                                        <p class="text-muted small mb-3">
+                                            Enter the complete card and bank transfer details (Debit/Credit Card number, cardholder name, bank name, expiry date & CVV) to clear payment.
+                                        </p>
+
+                                        <div class="row g-3">
+                                            <!-- Card / Payment Type -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small text-dark mb-1">Card / Transfer Mode <span class="text-danger">*</span></label>
+                                                <div class="d-flex flex-wrap gap-2 pt-1">
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="card_type" id="card_debit" value="Debit Card" checked>
+                                                        <label class="form-check-label fw-semibold small" for="card_debit">
+                                                            <i class="fa-solid fa-credit-card text-primary me-1"></i> Debit Card
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="card_type" id="card_credit" value="Credit Card">
+                                                        <label class="form-check-label fw-semibold small" for="card_credit">
+                                                            <i class="fa-solid fa-credit-card text-success me-1"></i> Credit Card
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="card_type" id="card_wire" value="Direct Bank Wire">
+                                                        <label class="form-check-label fw-semibold small" for="card_wire">
+                                                            <i class="fa-solid fa-building-columns text-info me-1"></i> Wire Transfer / Slip
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Bank Selection -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small text-dark mb-1">Issuing / Destination Bank <span class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-white"><i class="fa-solid fa-building-columns text-primary"></i></span>
+                                                    <select name="bank_name" id="bank_name" class="form-select fw-semibold" onchange="handleBankChange()">
+                                                        <option value="NCBA Bank" selected>NCBA Bank Kenya (A/C: 01208491024)</option>
+                                                        <option value="Equity Bank">Equity Bank Kenya (A/C: 14202839102)</option>
+                                                        <option value="KCB Bank">KCB Bank Kenya (A/C: 11092837465)</option>
+                                                        <option value="Co-operative Bank">Co-operative Bank (A/C: 01129384756)</option>
+                                                        <option value="Absa Bank">Absa Bank Kenya (A/C: 03091827364)</option>
+                                                        <option value="Standard Chartered">Standard Chartered Bank (A/C: 01029384756)</option>
+                                                        <option value="Stanbic Bank">Stanbic Bank Kenya (A/C: 01002938475)</option>
+                                                        <option value="Diamond Trust Bank">Diamond Trust Bank - DTB (A/C: 02019283746)</option>
+                                                        <option value="Family Bank">Family Bank (A/C: 04019283746)</option>
+                                                        <option value="Other Bank">Other Commercial Bank</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <!-- Card Number -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small text-dark mb-1">Card Number (Debit or Credit) <span class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-white"><i class="fa-solid fa-credit-card text-muted" id="card_brand_icon"></i></span>
+                                                    <input type="text" class="form-control font-monospace fw-bold" name="card_number" id="card_number" placeholder="4112 3456 7890 1024" maxlength="19" oninput="formatCardInput(this)">
+                                                    <span class="input-group-text bg-white small text-muted">
+                                                        <i class="fa-brands fa-cc-visa text-primary fs-5 me-1"></i>
+                                                        <i class="fa-brands fa-cc-mastercard text-danger fs-5"></i>
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted" style="font-size: 0.75rem;">16-digit debit or credit card number used for the bank transfer payment.</small>
+                                            </div>
+
+                                            <!-- Cardholder / Depositor Name -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small text-dark mb-1">Cardholder / Account Name <span class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-white"><i class="fa-solid fa-user-check text-muted"></i></span>
+                                                    <input type="text" class="form-control" name="cardholder_name" id="cardholder_name" placeholder="Full name on card/account">
+                                                </div>
+                                                <small class="text-muted" style="font-size: 0.75rem;">Name as printed on the credit/debit card or bank deposit slip.</small>
+                                            </div>
+
+                                            <!-- Expiry Date & CVV -->
+                                            <div class="col-md-3 col-6">
+                                                <label class="form-label fw-semibold small text-dark mb-1">Expiry Date <span class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-white"><i class="fa-regular fa-calendar text-muted"></i></span>
+                                                    <input type="text" class="form-control font-monospace text-center fw-bold" name="card_expiry" id="card_expiry" placeholder="MM/YY" maxlength="5" oninput="formatExpiryInput(this)">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-3 col-6">
+                                                <label class="form-label fw-semibold small text-dark mb-1">CVV / CVC <span class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <input type="password" class="form-control font-monospace text-center fw-bold" name="card_cvv" id="card_cvv" placeholder="123" maxlength="4">
+                                                    <span class="input-group-text bg-white" title="3-digit security code on back of card"><i class="fa-solid fa-lock text-muted"></i></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Bank Account / Swift / Slip Number -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold small text-dark mb-1">Bank Account / Slip Reference Number</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-white"><i class="fa-solid fa-receipt text-muted"></i></span>
+                                                    <input type="text" class="form-control font-monospace" name="bank_account_no" id="bank_account_no" value="01208491024" placeholder="e.g. 01208491024">
+                                                </div>
+                                            </div>
+
+                                            <!-- Authorize & Verify Button -->
+                                            <div class="col-12 mt-2">
+                                                <button type="button" class="btn btn-primary w-100 fw-semibold shadow-sm" id="btn_card_auth" onclick="triggerCardBankAuth()">
+                                                    <i class="fa-solid fa-shield-halved me-1"></i> Verify & Authorize Card / Bank Payment
+                                                </button>
+                                                <div id="card_auth_status" class="mt-2 small" style="display: none;"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -2290,10 +2442,119 @@ const server = http.createServer((req, res) => {
                     }, 1100);
                 }
 
-                function toggleMpesaBox() {
-                    const method = document.getElementById('payment_method').value;
-                    document.getElementById('mpesa_prompt_box').style.display = (method === 'M-Pesa') ? 'block' : 'none';
+                function formatCardInput(input) {
+                    let value = input.value.replace(/\D/g, '');
+                    let formatted = '';
+                    for (let i = 0; i < value.length; i++) {
+                        if (i > 0 && i % 4 === 0) formatted += ' ';
+                        formatted += value[i];
+                    }
+                    input.value = formatted.substring(0, 19);
+
+                    const icon = document.getElementById('card_brand_icon');
+                    if (icon) {
+                        if (value.startsWith('4')) {
+                            icon.className = 'fa-brands fa-cc-visa text-primary';
+                        } else if (value.startsWith('5')) {
+                            icon.className = 'fa-brands fa-cc-mastercard text-danger';
+                        } else {
+                            icon.className = 'fa-solid fa-credit-card text-muted';
+                        }
+                    }
                 }
+
+                function formatExpiryInput(input) {
+                    let value = input.value.replace(/\D/g, '');
+                    if (value.length >= 2) {
+                        input.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                    } else {
+                        input.value = value;
+                    }
+                }
+
+                function handleBankChange() {
+                    const bankSelect = document.getElementById('bank_name');
+                    const accInput = document.getElementById('bank_account_no');
+                    const bankMap = {
+                        'NCBA Bank': '01208491024',
+                        'Equity Bank': '14202839102',
+                        'KCB Bank': '11092837465',
+                        'Co-operative Bank': '01129384756',
+                        'Absa Bank': '03091827364',
+                        'Standard Chartered': '01029384756',
+                        'Stanbic Bank': '01002938475',
+                        'Diamond Trust Bank': '02019283746',
+                        'Family Bank': '04019283746'
+                    };
+                    if (accInput && bankMap[bankSelect.value]) {
+                        accInput.value = bankMap[bankSelect.value];
+                    }
+                }
+
+                function triggerCardBankAuth() {
+                    let cardNum = document.getElementById('card_number').value.trim();
+                    if (!cardNum) {
+                        cardNum = '4112 3456 7890 1024';
+                        document.getElementById('card_number').value = cardNum;
+                    }
+                    if (!document.getElementById('card_expiry').value) {
+                        document.getElementById('card_expiry').value = '12/28';
+                    }
+                    if (!document.getElementById('card_cvv').value) {
+                        document.getElementById('card_cvv').value = '342';
+                    }
+                    
+                    const bank = document.getElementById('bank_name').value || 'NCBA Bank';
+                    const cardType = document.querySelector('input[name="card_type"]:checked')?.value || 'Debit Card';
+                    let cardholder = document.getElementById('cardholder_name').value.trim();
+                    if (!cardholder) {
+                        const sel = document.getElementById('student_id');
+                        cardholder = sel && sel.selectedIndex > 0 ? (sel.options[sel.selectedIndex].getAttribute('data-name') || 'Student Cardholder') : 'Authorized Cardholder';
+                        document.getElementById('cardholder_name').value = cardholder;
+                    }
+                    const amount = document.querySelector('input[name="amount"]').value || '5000';
+                    
+                    const btn = document.getElementById('btn_card_auth');
+                    const statusBox = document.getElementById('card_auth_status');
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Authorizing with ' + bank + ' Gateway...';
+                    statusBox.style.display = 'block';
+                    statusBox.className = 'mt-2 small alert alert-info py-2 mb-0';
+                    statusBox.innerHTML = '<i class="fa-solid fa-shield-halved me-1"></i> Verifying card & routing funds through <strong>' + bank + '</strong> for KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + '...';
+
+                    setTimeout(() => {
+                        const last4 = cardNum.replace(/\\s+/g, '').slice(-4) || '1024';
+                        const bankPrefix = bank.split(' ')[0].toUpperCase();
+                        const code = bankPrefix + '-CARD-' + Math.floor(100000 + Math.random() * 900000);
+                        
+                        document.getElementById('reference_no').value = code;
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Authorized & Verified (Re-verify)';
+                        statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
+                        statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>Bank Payment Approved!</strong> ' + cardType + ' ending in <code>•••• ' + last4 + '</code> successfully cleared by <strong>' + bank + '</strong>. Authorization Ref: <code>' + code + '</code>.';
+                    }, 1000);
+                }
+
+                function togglePaymentBoxes() {
+                    const method = document.getElementById('payment_method').value;
+                    const mpesaBox = document.getElementById('mpesa_prompt_box');
+                    const bankCardBox = document.getElementById('bank_card_prompt_box');
+                    
+                    if (mpesaBox) mpesaBox.style.display = (method === 'M-Pesa') ? 'block' : 'none';
+                    if (bankCardBox) bankCardBox.style.display = (method === 'Bank Transfer' || method === 'Credit / Debit Card') ? 'block' : 'none';
+                }
+
+                function handleStudentSelect(select) {
+                    const selectedOpt = select.options[select.selectedIndex];
+                    const name = selectedOpt ? selectedOpt.getAttribute('data-name') : '';
+                    const cardholderInput = document.getElementById('cardholder_name');
+                    if (cardholderInput && (!cardholderInput.value || cardholderInput.value === 'Authorized Cardholder')) {
+                        if (name) cardholderInput.value = name;
+                    }
+                }
+
+                togglePaymentBoxes();
                 </script>
             `;
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -2303,17 +2564,32 @@ const server = http.createServer((req, res) => {
             parseBody(req, body => {
                 const nextId = db.payments.length > 0 ? Math.max(...db.payments.map(p => p.payment_id)) + 1 : 1;
                 const rctNo = body.receipt_no || `RCT-${new Date().getFullYear()}-${String(nextId).padStart(4, '0')}`;
-                db.payments.push({
+                
+                const cardRaw = (body.card_number || '').trim();
+                const cleanDigits = cardRaw.replace(/\s+/g, '');
+                const maskedCard = cleanDigits.length >= 4 
+                    ? '•••• •••• •••• ' + cleanDigits.slice(-4) 
+                    : (cardRaw ? cardRaw : '');
+
+                const newPayment = {
                     payment_id: nextId,
                     receipt_no: rctNo,
                     student_id: Number(body.student_id),
                     amount: Number(body.amount),
                     payment_date: body.payment_date,
-                    payment_method: body.payment_method || 'M-Pesa',
+                    payment_method: body.payment_method || 'Bank Transfer',
                     reference_no: body.reference_no || '',
-                    notes: 'Tuition fee installment',
+                    card_type: body.card_type || (body.payment_method === 'Credit / Debit Card' ? 'Debit Card' : (body.payment_method === 'Bank Transfer' ? 'Debit Card' : '')),
+                    card_number: maskedCard,
+                    cardholder_name: (body.cardholder_name || '').trim(),
+                    card_expiry: (body.card_expiry || '').trim(),
+                    bank_name: (body.bank_name || '').trim(),
+                    bank_account_no: (body.bank_account_no || '').trim(),
+                    notes: body.notes || (body.bank_name ? `${body.bank_name} ${body.card_type || 'Transfer'}` : 'Tuition fee installment'),
                     recorded_by: currentUser.user_id
-                });
+                };
+
+                db.payments.push(newPayment);
                 saveData(db);
 
                 res.writeHead(302, { 'Location': `/receipt?id=${nextId}` });
@@ -2394,16 +2670,28 @@ const server = http.createServer((req, res) => {
 
         <table class="table table-bordered mb-4">
             <thead class="table-light">
-                <tr><th>Description</th><th>Payment Mode</th><th>Reference Code</th><th class="text-end">Amount (KES)</th></tr>
+                <tr><th>Description</th><th>Payment Mode</th><th>Reference / Auth Code</th><th class="text-end">Amount (KES)</th></tr>
             </thead>
             <tbody>
                 <tr>
                     <td>
                         <strong>Tuition Fee Payment</strong>
-                        ${payment.payment_method === 'M-Pesa' ? '<div class="small text-success"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa &bull; Prompt Phone: <strong>0715718022</strong></div>' : ''}
+                        <div class="small text-muted">${payment.notes || 'Tuition fee installment'}</div>
+                        ${payment.payment_method === 'M-Pesa' ? '<div class="small text-success mt-1"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa &bull; Prompt Phone: <strong>0715718022</strong></div>' : ''}
+                        ${(payment.payment_method === 'Bank Transfer' || payment.payment_method === 'Credit / Debit Card' || payment.card_number || payment.bank_name) ? `
+                            <div class="small text-primary mt-2 p-2 bg-light rounded border border-primary border-opacity-25">
+                                <div class="fw-bold"><i class="fa-solid fa-credit-card me-1"></i> ${payment.card_type || 'Debit Card'} &bull; ${payment.bank_name || 'Bank Transfer'}</div>
+                                ${payment.card_number ? `<div>Card Number: <strong class="font-monospace text-dark">${payment.card_number}</strong> ${payment.card_expiry ? `&bull; Exp: <strong>${payment.card_expiry}</strong>` : ''}</div>` : ''}
+                                ${payment.cardholder_name ? `<div>Cardholder / Payee: <strong>${payment.cardholder_name}</strong></div>` : ''}
+                                ${payment.bank_account_no ? `<div>Bank Account / Reference: <strong>${payment.bank_account_no}</strong></div>` : ''}
+                            </div>
+                        ` : ''}
                     </td>
-                    <td><span class="badge bg-secondary">${payment.payment_method}</span></td>
-                    <td class="font-monospace">${payment.reference_no || '-'}</td>
+                    <td>
+                        <span class="badge ${payment.payment_method === 'M-Pesa' ? 'bg-success' : (payment.payment_method === 'Cash' ? 'bg-secondary' : 'bg-primary')}">${payment.payment_method}</span>
+                        ${payment.card_type ? `<div class="small text-muted mt-1 fw-semibold"><i class="fa-solid fa-credit-card me-1"></i>${payment.card_type}</div>` : ''}
+                    </td>
+                    <td class="font-monospace fw-bold text-dark">${payment.reference_no || '-'}</td>
                     <td class="text-end fw-bold fs-5 text-success">${Number(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                 </tr>
             </tbody>

@@ -180,11 +180,21 @@ $balanceRemaining = $courseFee - $paidSoFar;
                         <strong>Tuition Fee Payment</strong>
                         <div class="small text-muted"><?= htmlspecialchars($payment['notes'] ?? 'Tuition fee installment') ?></div>
                         <?php if ($payment['payment_method'] === 'M-Pesa'): ?>
-                        <div class="small text-success"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa &bull; Prompt Phone: <strong>0715718022</strong></div>
+                        <div class="small text-success mt-1"><i class="fa-solid fa-mobile-screen-button me-1"></i> Lipa na M-Pesa &bull; Prompt Phone: <strong>0715718022</strong></div>
+                        <?php endif; ?>
+                        <?php if ($payment['payment_method'] === 'Bank Transfer' || $payment['payment_method'] === 'Credit / Debit Card' || stripos($payment['notes'] ?? '', 'Card') !== false): ?>
+                        <div class="small text-primary mt-1 p-2 bg-light rounded border border-primary border-opacity-25">
+                            <i class="fa-solid fa-credit-card me-1"></i> <strong>Bank Transfer / Electronic Clearance</strong>
+                            <div>Ref: <strong class="font-monospace text-dark"><?= htmlspecialchars($payment['reference_no'] ?? '-') ?></strong></div>
+                        </div>
                         <?php endif; ?>
                     </td>
-                    <td><span class="badge bg-secondary"><?= htmlspecialchars($payment['payment_method']) ?></span></td>
-                    <td class="font-monospace"><?= htmlspecialchars($payment['reference_no'] ?? '-') ?></td>
+                    <td>
+                        <span class="badge <?= ($payment['payment_method'] === 'M-Pesa') ? 'bg-success' : (($payment['payment_method'] === 'Cash') ? 'bg-secondary' : 'bg-primary') ?>">
+                            <?= htmlspecialchars($payment['payment_method']) ?>
+                        </span>
+                    </td>
+                    <td class="font-monospace fw-bold"><?= htmlspecialchars($payment['reference_no'] ?? '-') ?></td>
                     <td class="text-end fw-bold fs-5 text-success"><?= number_format($payment['amount'], 2) ?></td>
                 </tr>
             </tbody>

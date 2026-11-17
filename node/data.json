@@ -418,6 +418,12 @@
       "payment_date": "2026-10-05",
       "payment_method": "Bank Transfer",
       "reference_no": "EKB-8491024",
+      "card_type": "Debit Card",
+      "card_number": "•••• •••• •••• 1024",
+      "cardholder_name": "Brian Kipchumba",
+      "card_expiry": "11/28",
+      "bank_name": "NCBA Bank",
+      "bank_account_no": "01208491024",
       "notes": "NCBA Bank Mombasa Deposit",
       "recorded_by": 1
     },
@@ -467,7 +473,7 @@
     },
     {
       "payment_id": 8,
-      "receipt_no": "RCT-2026-TESTMPESA",
+      "receipt_no": "RCT-2026-0008",
       "student_id": 1,
       "amount": 5000,
       "payment_date": "2026-11-16",
@@ -475,6 +481,23 @@
       "reference_no": "QA928KL10X",
       "notes": "Tuition fee installment",
       "recorded_by": 2
+    },
+    {
+      "payment_id": 9,
+      "receipt_no": "RCT-2026-0009",
+      "student_id": 1,
+      "amount": 6500,
+      "payment_date": "2026-11-17",
+      "payment_method": "Bank Transfer",
+      "reference_no": "EQB-CARD-948123",
+      "card_type": "Credit Card",
+      "card_number": "•••• •••• •••• 3456",
+      "cardholder_name": "Mary Wanjiku",
+      "card_expiry": "10/29",
+      "bank_name": "Equity Bank",
+      "bank_account_no": "14202839102",
+      "notes": "Equity Bank Credit Card",
+      "recorded_by": 1
     }
   ],
   "driving_test_results": [
