@@ -46,25 +46,45 @@ function sendDarajaSTKPush(config, phone, amount, accountRef, callback) {
         formattedPhone = '254' + formattedPhone;
     }
 
-    if (!config.consumer_key || !config.consumer_secret) {
-        return callback(new Error('Safaricom Daraja Consumer Key and Secret are not configured. Configure them in the M-Pesa Settings panel below or developer.safaricom.co.ke.'));
+    const cKey = (config.consumer_key || '').trim();
+    const cSecret = (config.consumer_secret || '').trim();
+
+    if (!cKey || !cSecret) {
+        return callback(new Error('Safaricom Daraja Consumer Key and Secret are not configured. Configure them in the M-Pesa Settings panel below or register free at developer.safaricom.co.ke.'));
+    }
+
+    if (cKey.includes('http') || cKey.includes('/') || cKey.includes(':')) {
+        return callback(new Error('Invalid Consumer Key format. You entered a URL ("' + cKey.substring(0, 40) + '..."). A Safaricom Consumer Key is an alphanumeric API token (e.g. "AbCdEf123456..."), NOT an endpoint URL. Please obtain your Consumer Key from developer.safaricom.co.ke > My Apps.'));
     }
 
     const isLive = config.env === 'live';
     const authHost = isLive ? 'api.safaricom.co.ke' : 'sandbox.safaricom.co.ke';
-    const auth = Buffer.from(`${config.consumer_key}:${config.consumer_secret}`).toString('base64');
+    const auth = Buffer.from(`${cKey}:${cSecret}`).toString('base64');
 
     const authReq = https.request({
         hostname: authHost,
         path: '/oauth/v1/generate?grant_type=client_credentials',
         method: 'GET',
         headers: {
-            'Authorization': `Basic ${auth}`
-        }
+            'Authorization': `Basic ${auth}`,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Safaricom-Daraja-Client/1.0',
+            'Accept': 'application/json'
+        },
+        timeout: 10000
     }, (authRes) => {
         let data = '';
         authRes.on('data', c => data += c);
         authRes.on('end', () => {
+            if (authRes.statusCode === 401) {
+                return callback(new Error('Safaricom Authentication Failed (HTTP 401 Unauthorized). The Consumer Key or Consumer Secret is invalid or expired. Check your keys at developer.safaricom.co.ke > My Apps.'));
+            }
+            if (authRes.statusCode !== 200) {
+                return callback(new Error(`Safaricom Gateway Error (HTTP ${authRes.statusCode}): ${data ? data.substring(0, 200) : 'Empty response from Safaricom'}`));
+            }
+            if (!data || !data.trim()) {
+                return callback(new Error('Empty response received from Safaricom Daraja OAuth server. Please ensure Sandbox environment is selected or check network connectivity.'));
+            }
+
             try {
                 const tokenRes = JSON.parse(data);
                 if (!tokenRes.access_token) {
@@ -80,8 +100,8 @@ function sendDarajaSTKPush(config, phone, amount, accountRef, callback) {
                     String(now.getMinutes()).padStart(2, '0') +
                     String(now.getSeconds()).padStart(2, '0');
 
-                const shortcode = config.shortcode || '174379';
-                const passkey = config.passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+                const shortcode = (config.shortcode || '174379').trim();
+                const passkey = (config.passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919').trim();
                 const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
 
                 const postData = JSON.stringify({
@@ -105,12 +125,18 @@ function sendDarajaSTKPush(config, phone, amount, accountRef, callback) {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Safaricom-Daraja-Client/1.0',
+                        'Accept': 'application/json',
                         'Content-Length': Buffer.byteLength(postData)
-                    }
+                    },
+                    timeout: 15000
                 }, (stkRes) => {
                     let stkData = '';
                     stkRes.on('data', c => stkData += c);
                     stkRes.on('end', () => {
+                        if (!stkData || !stkData.trim()) {
+                            return callback(new Error(`Safaricom STK Push returned empty response (HTTP ${stkRes.statusCode}).`));
+                        }
                         try {
                             const resObj = JSON.parse(stkData);
                             if (resObj.ResponseCode === '0') {
@@ -119,21 +145,29 @@ function sendDarajaSTKPush(config, phone, amount, accountRef, callback) {
                                 callback(new Error(resObj.ResponseDescription || resObj.errorMessage || stkData));
                             }
                         } catch (err) {
-                            callback(new Error('Invalid Daraja response: ' + stkData));
+                            callback(new Error('Safaricom STK Push Gateway response (HTTP ' + stkRes.statusCode + '): ' + stkData.substring(0, 200)));
                         }
                     });
                 });
 
+                stkReq.on('timeout', () => {
+                    stkReq.destroy();
+                    callback(new Error('Safaricom STK Push request timed out after 15 seconds.'));
+                });
                 stkReq.on('error', err => callback(err));
                 stkReq.write(postData);
                 stkReq.end();
 
             } catch (err) {
-                callback(new Error('Error parsing Safaricom token response: ' + err.message));
+                callback(new Error('Safaricom OAuth response was not valid JSON: ' + data.substring(0, 150)));
             }
         });
     });
 
+    authReq.on('timeout', () => {
+        authReq.destroy();
+        callback(new Error('Safaricom OAuth request timed out after 10 seconds. Check internet connection.'));
+    });
     authReq.on('error', err => callback(err));
     authReq.end();
 }
@@ -2535,44 +2569,46 @@ const server = http.createServer((req, res) => {
                                                         <span class="fw-bold text-dark small"><i class="fa-solid fa-key text-warning me-1"></i> Safaricom Daraja M-Pesa API Credentials (To Prompt Real Physical Phones)</span>
                                                         <span class="badge bg-warning text-dark">developer.safaricom.co.ke</span>
                                                     </div>
-                                                    <p class="text-muted small mb-2">
-                                                        To make an actual prompt pop up on a real physical Safaricom phone in Kenya, you need an API App from Safaricom Daraja (<a href="https://developer.safaricom.co.ke" target="_blank" class="fw-bold">developer.safaricom.co.ke</a>). These are the 4 codes Safaricom provides:
-                                                    </p>
+                                                    <div class="alert alert-info py-2 px-3 small mb-2">
+                                                        <i class="fa-solid fa-info-circle me-1"></i> <strong>Where to get these keys:</strong> Register free at <a href="https://developer.safaricom.co.ke" target="_blank" class="fw-bold">developer.safaricom.co.ke</a>, click <strong>My Apps</strong> &gt; <strong>Create an App</strong>, and copy your <strong>Consumer Key</strong> and <strong>Consumer Secret</strong>. <em>(Note: Do not paste a URL or website password here).</em>
+                                                    </div>
                                                     <div class="row g-2">
                                                         <div class="col-md-6">
-                                                            <label class="form-label small text-muted mb-1 fw-semibold">1. Consumer Key (API Key)</label>
-                                                            <input type="text" class="form-control form-control-sm font-monospace" id="cfg_consumer_key" placeholder="Enter Consumer Key from Safaricom" value="${db.mpesa_config?.consumer_key || ''}">
+                                                            <label class="form-label small text-dark mb-1 fw-semibold">1. Consumer Key (Alphanumeric Token)</label>
+                                                            <input type="text" class="form-control form-control-sm font-monospace" id="cfg_consumer_key" placeholder="e.g. w2Y9kL7xPq..." value="${db.mpesa_config?.consumer_key || ''}">
+                                                            <small class="text-muted" style="font-size: 0.72rem;">From Daraja My Apps (NOT a URL).</small>
                                                         </div>
                                                         <div class="col-md-6">
-                                                            <label class="form-label small text-muted mb-1 fw-semibold">2. Consumer Secret (API Secret)</label>
-                                                            <input type="password" class="form-control form-control-sm font-monospace" id="cfg_consumer_secret" placeholder="Enter Consumer Secret from Safaricom" value="${db.mpesa_config?.consumer_secret || ''}">
+                                                            <label class="form-label small text-dark mb-1 fw-semibold">2. Consumer Secret (API Secret)</label>
+                                                            <input type="password" class="form-control form-control-sm font-monospace" id="cfg_consumer_secret" placeholder="API Secret from Daraja" value="${db.mpesa_config?.consumer_secret || ''}">
+                                                            <small class="text-muted" style="font-size: 0.72rem;">From Daraja My Apps (NOT your login password).</small>
                                                         </div>
                                                         <div class="col-md-4">
-                                                            <label class="form-label small text-muted mb-1 fw-semibold">3. Shortcode / Paybill</label>
+                                                            <label class="form-label small text-dark mb-1 fw-semibold">3. Shortcode / Paybill</label>
                                                             <input type="text" class="form-control form-control-sm font-monospace" id="cfg_shortcode" placeholder="174379 or Live Paybill" value="${db.mpesa_config?.shortcode || '174379'}">
+                                                            <small class="text-muted" style="font-size: 0.72rem;">Sandbox default: <code>174379</code>.</small>
                                                         </div>
                                                         <div class="col-md-4">
-                                                            <label class="form-label small text-muted mb-1 fw-semibold">4. Lipa na M-Pesa Passkey</label>
+                                                            <label class="form-label small text-dark mb-1 fw-semibold">4. Lipa na M-Pesa Passkey</label>
                                                             <input type="text" class="form-control form-control-sm font-monospace" id="cfg_passkey" placeholder="Passkey from Daraja" value="${db.mpesa_config?.passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'}">
+                                                            <small class="text-muted" style="font-size: 0.72rem;">Standard Sandbox passkey prefilled.</small>
                                                         </div>
                                                         <div class="col-md-4">
-                                                            <label class="form-label small text-muted mb-1 fw-semibold">Environment</label>
+                                                            <label class="form-label small text-dark mb-1 fw-semibold">Environment</label>
                                                             <select class="form-select form-select-sm" id="cfg_env">
-                                                                <option value="sandbox" ${db.mpesa_config?.env === 'sandbox' ? 'selected' : ''}>Sandbox (Test API)</option>
-                                                                <option value="live" ${db.mpesa_config?.env === 'live' ? 'selected' : ''}>Live (Production Safaricom)</option>
+                                                                <option value="sandbox" ${db.mpesa_config?.env === 'sandbox' ? 'selected' : ''}>Sandbox (developer.safaricom.co.ke)</option>
+                                                                <option value="live" ${db.mpesa_config?.env === 'live' ? 'selected' : ''}>Live (Production)</option>
                                                             </select>
+                                                            <small class="text-muted" style="font-size: 0.72rem;">Use Sandbox for testing.</small>
                                                         </div>
-                                                        <div class="col-12 mt-2 d-flex justify-content-between align-items-center">
-                                                            <small class="text-muted">Need credentials? Register free at <a href="https://developer.safaricom.co.ke" target="_blank">developer.safaricom.co.ke</a>.</small>
+                                                        <div class="col-12 mt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillDarajaSandboxDefaults()"><i class="fa-solid fa-rotate-left me-1"></i> Reset Sandbox Defaults</button>
                                                             <button type="button" class="btn btn-sm btn-dark fw-semibold" onclick="saveDarajaConfig()"><i class="fa-solid fa-floppy-disk me-1"></i> Save API Credentials</button>
                                                         </div>
                                                         <div id="cfg_status" class="col-12 small mt-1" style="display: none;"></div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2793,6 +2829,20 @@ const server = http.createServer((req, res) => {
                     });
                 }
 
+                function fillDarajaSandboxDefaults() {
+                    document.getElementById('cfg_consumer_key').value = '';
+                    document.getElementById('cfg_consumer_secret').value = '';
+                    document.getElementById('cfg_shortcode').value = '174379';
+                    document.getElementById('cfg_passkey').value = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+                    document.getElementById('cfg_env').value = 'sandbox';
+                }
+
+                function switchToSimulatorAndOpen() {
+                    document.getElementById('mode_sim').checked = true;
+                    switchMpesaMode();
+                    triggerMpesaSTKPush();
+                }
+
                 function triggerMpesaSTKPush() {
                     const mode = document.querySelector('input[name="mpesa_mode"]:checked')?.value || 'simulator';
                     let studentPhone = (document.getElementById('student_mpesa_phone').value || '').trim();
@@ -2832,14 +2882,14 @@ const server = http.createServer((req, res) => {
                                 document.getElementById('reference_no').value = code;
                             } else {
                                 statusBox.className = 'mt-2 small alert alert-warning py-2 mb-0';
-                                statusBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Daraja API Notice:</strong> ' + data.error + '<br><small>To prompt a real phone, enter your Safaricom keys in the panel above. Alternatively, select <strong>Interactive Handset PIN Simulator</strong> to test right away.</small>';
+                                statusBox.innerHTML = '<div class="d-flex align-items-start"><i class="fa-solid fa-triangle-exclamation text-warning fs-5 me-2 mt-1"></i><div><strong>Daraja API Notice:</strong> ' + data.error + '<div class="mt-2"><button type="button" class="btn btn-sm btn-success fw-bold me-1" onclick="switchToSimulatorAndOpen()"><i class="fa-solid fa-mobile-screen me-1"></i> Open Handset PIN Simulator Instead</button><button type="button" class="btn btn-sm btn-outline-dark" onclick="toggleDarajaConfigPanel()"><i class="fa-solid fa-key me-1"></i> Enter Real Daraja Keys</button></div></div></div>';
                                 document.getElementById('daraja_config_panel').style.display = 'block';
                             }
                         }).catch(err => {
                             btn.disabled = false;
                             btn.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Dispatch Real Safaricom Daraja STK Push';
                             statusBox.className = 'mt-2 small alert alert-danger py-2 mb-0';
-                            statusBox.innerHTML = '<i class="fa-solid fa-circle-exclamation me-1"></i> Network error: ' + err.message;
+                            statusBox.innerHTML = '<div class="d-flex align-items-start"><i class="fa-solid fa-circle-exclamation text-danger fs-5 me-2 mt-1"></i><div><strong>Connection Error:</strong> ' + err.message + '<div class="mt-2"><button type="button" class="btn btn-sm btn-success fw-bold" onclick="switchToSimulatorAndOpen()"><i class="fa-solid fa-mobile-screen me-1"></i> Open Handset PIN Simulator Instead</button></div></div></div>';
                         });
                         return;
                     }
