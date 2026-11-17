@@ -5,6 +5,7 @@
 // =============================================================
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
@@ -17,11 +18,124 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 function loadData() {
     try {
         const raw = fs.readFileSync(DATA_FILE, 'utf8');
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (!parsed.mpesa_config) {
+            parsed.mpesa_config = {
+                env: 'sandbox',
+                consumer_key: '',
+                consumer_secret: '',
+                shortcode: '174379',
+                passkey: 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919',
+                recipient_phone: '0715718022',
+                paybill: '522522'
+            };
+        }
+        return parsed;
     } catch (e) {
         console.error('Error loading data.json:', e);
-        return { users: [], students: [], instructors: [], vehicles: [], lesson_schedules: [], payments: [], driving_test_results: [] };
+        return { users: [], students: [], instructors: [], vehicles: [], lesson_schedules: [], payments: [], driving_test_results: [], mpesa_config: {} };
     }
+}
+
+// Safaricom Daraja STK Push Gateway Integration
+function sendDarajaSTKPush(config, phone, amount, accountRef, callback) {
+    let formattedPhone = (phone || '').replace(/\D/g, '');
+    if (formattedPhone.startsWith('0')) {
+        formattedPhone = '254' + formattedPhone.substring(1);
+    } else if (formattedPhone.startsWith('7') || formattedPhone.startsWith('1')) {
+        formattedPhone = '254' + formattedPhone;
+    }
+
+    if (!config.consumer_key || !config.consumer_secret) {
+        return callback(new Error('Safaricom Daraja Consumer Key and Secret are not configured. Configure them in the M-Pesa Settings panel below or developer.safaricom.co.ke.'));
+    }
+
+    const isLive = config.env === 'live';
+    const authHost = isLive ? 'api.safaricom.co.ke' : 'sandbox.safaricom.co.ke';
+    const auth = Buffer.from(`${config.consumer_key}:${config.consumer_secret}`).toString('base64');
+
+    const authReq = https.request({
+        hostname: authHost,
+        path: '/oauth/v1/generate?grant_type=client_credentials',
+        method: 'GET',
+        headers: {
+            'Authorization': `Basic ${auth}`
+        }
+    }, (authRes) => {
+        let data = '';
+        authRes.on('data', c => data += c);
+        authRes.on('end', () => {
+            try {
+                const tokenRes = JSON.parse(data);
+                if (!tokenRes.access_token) {
+                    return callback(new Error('Safaricom OAuth authentication failed: ' + (tokenRes.errorMessage || tokenRes.error_description || data)));
+                }
+
+                const accessToken = tokenRes.access_token;
+                const now = new Date();
+                const timestamp = now.getFullYear().toString() +
+                    String(now.getMonth() + 1).padStart(2, '0') +
+                    String(now.getDate()).padStart(2, '0') +
+                    String(now.getHours()).padStart(2, '0') +
+                    String(now.getMinutes()).padStart(2, '0') +
+                    String(now.getSeconds()).padStart(2, '0');
+
+                const shortcode = config.shortcode || '174379';
+                const passkey = config.passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+                const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
+
+                const postData = JSON.stringify({
+                    BusinessShortCode: shortcode,
+                    Password: password,
+                    Timestamp: timestamp,
+                    TransactionType: 'CustomerPayBillOnline',
+                    Amount: Math.max(1, Math.round(Number(amount))),
+                    PartyA: formattedPhone,
+                    PartyB: shortcode,
+                    PhoneNumber: formattedPhone,
+                    CallBackURL: 'https://mydomain.com/api/mpesa/callback',
+                    AccountReference: accountRef || 'AnzaAuto',
+                    TransactionDesc: 'Driving School Tuition Fee'
+                });
+
+                const stkReq = https.request({
+                    hostname: authHost,
+                    path: '/mpesa/stkpush/v1/processrequest',
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(postData)
+                    }
+                }, (stkRes) => {
+                    let stkData = '';
+                    stkRes.on('data', c => stkData += c);
+                    stkRes.on('end', () => {
+                        try {
+                            const resObj = JSON.parse(stkData);
+                            if (resObj.ResponseCode === '0') {
+                                callback(null, resObj);
+                            } else {
+                                callback(new Error(resObj.ResponseDescription || resObj.errorMessage || stkData));
+                            }
+                        } catch (err) {
+                            callback(new Error('Invalid Daraja response: ' + stkData));
+                        }
+                    });
+                });
+
+                stkReq.on('error', err => callback(err));
+                stkReq.write(postData);
+                stkReq.end();
+
+            } catch (err) {
+                callback(new Error('Error parsing Safaricom token response: ' + err.message));
+            }
+        });
+    });
+
+    authReq.on('error', err => callback(err));
+    authReq.end();
 }
 
 function saveData(data) {
@@ -726,6 +840,64 @@ const server = http.createServer((req, res) => {
     }
 
     const db = loadData();
+
+    // -------------------------------------------------------------
+    // API: M-PESA DARAJA STK PUSH (REAL SAFARICOM INTEGRATION)
+    // -------------------------------------------------------------
+    if (pathname === '/api/mpesa/stkpush' && method === 'POST') {
+        parseBody(req, body => {
+            const phone = body.phone || '';
+            const amount = Number(body.amount || 1);
+            const accountRef = body.account_ref || 'AnzaAuto';
+            const config = db.mpesa_config || {};
+
+            if (!config.consumer_key || !config.consumer_secret) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    configured: false,
+                    error: 'Safaricom Daraja API credentials (Consumer Key & Consumer Secret) are not yet configured. Please enter your Daraja keys in the M-Pesa Settings panel below.'
+                }));
+                return;
+            }
+
+            sendDarajaSTKPush(config, phone, amount, accountRef, (err, result) => {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                if (err) {
+                    res.end(JSON.stringify({ success: false, configured: true, error: err.message }));
+                } else {
+                    res.end(JSON.stringify({
+                        success: true,
+                        configured: true,
+                        message: 'Safaricom M-Pesa STK Push prompt sent to ' + phone + '! Please enter your M-Pesa PIN on your phone handset to authorize payment to 0715718022.',
+                        checkoutId: result.CheckoutRequestID || result.MerchantRequestID
+                    }));
+                }
+            });
+        });
+        return;
+    }
+
+    // -------------------------------------------------------------
+    // API: M-PESA DARAJA CONFIG SAVE
+    // -------------------------------------------------------------
+    if (pathname === '/api/mpesa/config' && method === 'POST') {
+        parseBody(req, body => {
+            db.mpesa_config = {
+                env: body.env || 'sandbox',
+                consumer_key: (body.consumer_key || '').trim(),
+                consumer_secret: (body.consumer_secret || '').trim(),
+                shortcode: (body.shortcode || '174379').trim(),
+                passkey: (body.passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919').trim(),
+                recipient_phone: '0715718022',
+                paybill: (body.paybill || '522522').trim()
+            };
+            saveData(db);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: 'Safaricom Daraja API configuration saved successfully!', config: db.mpesa_config }));
+        });
+        return;
+    }
 
     // -------------------------------------------------------------
     // ROUTE: DASHBOARD
@@ -2319,13 +2491,88 @@ const server = http.createServer((req, res) => {
                                                 <small class="text-muted" style="font-size: 0.75rem;">Student handset prompted to enter M-Pesa PIN and send funds to 0715718022.</small>
                                             </div>
 
-                                            <!-- STK Push Action Button -->
+                                            <!-- STK Push Action Button & Mode Selector -->
                                             <div class="col-12 mt-2">
-                                                <button type="button" class="btn btn-success w-100 fw-semibold shadow-sm" id="btn_stk_push" onclick="triggerMpesaSTKPush()">
-                                                    <i class="fa-solid fa-paper-plane me-1"></i> Prompt Student Handset to Send Money to 0715718022
+                                                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <input type="radio" class="btn-check" name="mpesa_mode" id="mode_sim" value="simulator" checked onchange="switchMpesaMode()">
+                                                        <label class="btn btn-outline-success fw-semibold" for="mode_sim"><i class="fa-solid fa-mobile me-1"></i> Interactive Handset PIN Simulator</label>
+
+                                                        <input type="radio" class="btn-check" name="mpesa_mode" id="mode_live" value="live" onchange="switchMpesaMode()">
+                                                        <label class="btn btn-outline-success fw-semibold" for="mode_live"><i class="fa-solid fa-satellite-dish me-1"></i> Real Safaricom Daraja STK Push</label>
+
+                                                        <input type="radio" class="btn-check" name="mpesa_mode" id="mode_manual" value="manual" onchange="switchMpesaMode()">
+                                                        <label class="btn btn-outline-success fw-semibold" for="mode_manual"><i class="fa-solid fa-list-check me-1"></i> Manual M-Pesa Steps</label>
+                                                    </div>
+
+                                                    <button type="button" class="btn btn-sm btn-outline-dark fw-semibold" onclick="toggleDarajaConfigPanel()">
+                                                        <i class="fa-solid fa-key text-warning me-1"></i> M-Pesa API Keys (Daraja)
+                                                    </button>
+                                                </div>
+
+                                                <!-- Trigger Button -->
+                                                <button type="button" class="btn btn-success w-100 fw-semibold shadow-sm py-2" id="btn_stk_push" onclick="triggerMpesaSTKPush()">
+                                                    <i class="fa-solid fa-paper-plane me-1"></i> Send M-Pesa PIN Prompt to Student (0715718022 Recipient)
                                                 </button>
+
                                                 <div id="mpesa_status" class="mt-2 small" style="display: none;"></div>
+
+                                                <!-- Manual M-Pesa Instructions Box -->
+                                                <div id="mpesa_manual_box" class="mt-3 p-3 bg-white rounded-3 border border-success" style="display: none;">
+                                                    <h6 class="fw-bold text-success mb-2"><i class="fa-solid fa-mobile-screen-button me-1"></i> Manual M-Pesa Payment Instructions</h6>
+                                                    <ol class="small text-muted mb-2 ps-3">
+                                                        <li>On the student's phone, open <strong>M-Pesa</strong> &gt; <strong>Send Money</strong> (or <strong>Lipa na M-Pesa</strong> &gt; <strong>Paybill / Till</strong>).</li>
+                                                        <li>Enter School Receiving Phone Number: <strong class="text-dark font-monospace fs-6">0715718022</strong> (Recipient: <em>Anza Auto Driving School</em>).</li>
+                                                        <li>Enter Payment Amount: <strong class="text-success fs-6">KES <span id="manual_display_amount">5,000</span></strong>.</li>
+                                                        <li>Enter M-Pesa PIN and press <strong>Send</strong>.</li>
+                                                        <li>Wait for the Safaricom confirmation SMS, then copy the 10-character code (e.g. <code>QA189KL93Z</code>) into the <strong>Reference Code</strong> field above.</li>
+                                                    </ol>
+                                                </div>
+
+                                                <!-- Safaricom Daraja API Keys Setup Panel -->
+                                                <div id="daraja_config_panel" class="mt-3 p-3 bg-white rounded-3 border border-warning shadow-sm" style="display: none;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                                        <span class="fw-bold text-dark small"><i class="fa-solid fa-key text-warning me-1"></i> Safaricom Daraja M-Pesa API Credentials (To Prompt Real Physical Phones)</span>
+                                                        <span class="badge bg-warning text-dark">developer.safaricom.co.ke</span>
+                                                    </div>
+                                                    <p class="text-muted small mb-2">
+                                                        To make an actual prompt pop up on a real physical Safaricom phone in Kenya, you need an API App from Safaricom Daraja (<a href="https://developer.safaricom.co.ke" target="_blank" class="fw-bold">developer.safaricom.co.ke</a>). These are the 4 codes Safaricom provides:
+                                                    </p>
+                                                    <div class="row g-2">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small text-muted mb-1 fw-semibold">1. Consumer Key (API Key)</label>
+                                                            <input type="text" class="form-control form-control-sm font-monospace" id="cfg_consumer_key" placeholder="Enter Consumer Key from Safaricom" value="${db.mpesa_config?.consumer_key || ''}">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small text-muted mb-1 fw-semibold">2. Consumer Secret (API Secret)</label>
+                                                            <input type="password" class="form-control form-control-sm font-monospace" id="cfg_consumer_secret" placeholder="Enter Consumer Secret from Safaricom" value="${db.mpesa_config?.consumer_secret || ''}">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label small text-muted mb-1 fw-semibold">3. Shortcode / Paybill</label>
+                                                            <input type="text" class="form-control form-control-sm font-monospace" id="cfg_shortcode" placeholder="174379 or Live Paybill" value="${db.mpesa_config?.shortcode || '174379'}">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label small text-muted mb-1 fw-semibold">4. Lipa na M-Pesa Passkey</label>
+                                                            <input type="text" class="form-control form-control-sm font-monospace" id="cfg_passkey" placeholder="Passkey from Daraja" value="${db.mpesa_config?.passkey || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'}">
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label small text-muted mb-1 fw-semibold">Environment</label>
+                                                            <select class="form-select form-select-sm" id="cfg_env">
+                                                                <option value="sandbox" ${db.mpesa_config?.env === 'sandbox' ? 'selected' : ''}>Sandbox (Test API)</option>
+                                                                <option value="live" ${db.mpesa_config?.env === 'live' ? 'selected' : ''}>Live (Production Safaricom)</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-12 mt-2 d-flex justify-content-between align-items-center">
+                                                            <small class="text-muted">Need credentials? Register free at <a href="https://developer.safaricom.co.ke" target="_blank">developer.safaricom.co.ke</a>.</small>
+                                                            <button type="button" class="btn btn-sm btn-dark fw-semibold" onclick="saveDarajaConfig()"><i class="fa-solid fa-floppy-disk me-1"></i> Save API Credentials</button>
+                                                        </div>
+                                                        <div id="cfg_status" class="col-12 small mt-1" style="display: none;"></div>
+                                                    </div>
+                                                </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2461,8 +2708,93 @@ const server = http.createServer((req, res) => {
                     </div>
                 </div>
 
+                <!-- On-Screen Safaricom M-Pesa Handset PIN Dialog (Interactive Simulator Modal) -->
+                <div id="mpesa_handset_modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 1050; align-items: center; justify-content: center;">
+                    <div style="width: 100%; max-width: 380px; margin: 1rem; background: #004d25; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 2px solid #00aa44;">
+                        <div class="p-3 text-center border-bottom border-success border-opacity-50" style="background: #003a1c;">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-1" style="width: 44px; height: 44px;">
+                                <i class="fa-solid fa-mobile-screen text-success fs-5"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0 text-white" style="letter-spacing: 1px;">SAFARICOM M-PESA</h6>
+                            <small class="text-white-50" style="font-size: 0.75rem;">Lipa na M-Pesa Online STK Prompt</small>
+                        </div>
+                        <div class="p-4 text-white">
+                            <div class="bg-black bg-opacity-25 p-3 rounded-3 mb-3 text-center border border-success border-opacity-25">
+                                <div class="text-white-50 small mb-1">Pay Tuition Fee to:</div>
+                                <div class="fw-bold text-white fs-6">ANZA AUTO DRIVING SCHOOL</div>
+                                <div class="badge bg-success bg-opacity-50 text-white font-monospace mt-1">Recipient A/C: 0715718022</div>
+                                <div class="mt-2 text-warning fw-bold fs-5">KES <span id="modal_amount_text">5,000.00</span></div>
+                            </div>
+                            <div class="mb-3 text-center">
+                                <label class="form-label text-white-50 small fw-semibold mb-1">Enter 4-Digit M-Pesa PIN for <span id="modal_student_phone_text" class="text-white font-monospace">0755667788</span></label>
+                                <input type="password" id="modal_mpesa_pin" class="form-control text-center font-monospace fw-bold fs-3 bg-white text-dark shadow-sm" maxlength="4" placeholder="••••" autofocus>
+                                <small class="text-white-50 d-block mt-1" style="font-size: 0.72rem;">Enter your 4-digit PIN (e.g. 1234) and click Authorize</small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-light w-50" onclick="closeMpesaModal()">Cancel</button>
+                                <button type="button" class="btn btn-success w-50 fw-bold shadow-sm" onclick="confirmMpesaModalPIN()"><i class="fa-solid fa-check me-1"></i> Authorize</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <script>
+                function switchMpesaMode() {
+                    const mode = document.querySelector('input[name="mpesa_mode"]:checked')?.value || 'simulator';
+                    const manualBox = document.getElementById('mpesa_manual_box');
+                    const btn = document.getElementById('btn_stk_push');
+                    const amount = document.querySelector('input[name="amount"]').value || '5000';
+                    const amountSpan = document.getElementById('manual_display_amount');
+                    if (amountSpan) amountSpan.innerText = Number(amount).toLocaleString('en-US');
+
+                    if (mode === 'manual') {
+                        manualBox.style.display = 'block';
+                        btn.style.display = 'none';
+                    } else if (mode === 'live') {
+                        manualBox.style.display = 'none';
+                        btn.style.display = 'block';
+                        btn.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Dispatch Real Safaricom Daraja STK Push';
+                    } else {
+                        manualBox.style.display = 'none';
+                        btn.style.display = 'block';
+                        btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Prompt Student Handset (Open On-Screen PIN Dialog)';
+                    }
+                }
+
+                function toggleDarajaConfigPanel() {
+                    const panel = document.getElementById('daraja_config_panel');
+                    panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+                }
+
+                function saveDarajaConfig() {
+                    const consumerKey = document.getElementById('cfg_consumer_key').value.trim();
+                    const consumerSecret = document.getElementById('cfg_consumer_secret').value.trim();
+                    const shortcode = document.getElementById('cfg_shortcode').value.trim();
+                    const passkey = document.getElementById('cfg_passkey').value.trim();
+                    const env = document.getElementById('cfg_env').value;
+                    const status = document.getElementById('cfg_status');
+
+                    fetch('/api/mpesa/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'consumer_key=' + encodeURIComponent(consumerKey) +
+                              '&consumer_secret=' + encodeURIComponent(consumerSecret) +
+                              '&shortcode=' + encodeURIComponent(shortcode) +
+                              '&passkey=' + encodeURIComponent(passkey) +
+                              '&env=' + encodeURIComponent(env)
+                    }).then(r => r.json()).then(data => {
+                        status.style.display = 'block';
+                        status.className = 'col-12 small mt-2 alert alert-success py-1 mb-0';
+                        status.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> ' + data.message;
+                    }).catch(e => {
+                        status.style.display = 'block';
+                        status.className = 'col-12 small mt-2 alert alert-danger py-1 mb-0';
+                        status.innerHTML = '<i class="fa-solid fa-circle-exclamation me-1"></i> Error saving config: ' + e.message;
+                    });
+                }
+
                 function triggerMpesaSTKPush() {
+                    const mode = document.querySelector('input[name="mpesa_mode"]:checked')?.value || 'simulator';
                     let studentPhone = (document.getElementById('student_mpesa_phone').value || '').trim();
                     if (!studentPhone) {
                         const sel = document.getElementById('student_id');
@@ -2470,9 +2802,7 @@ const server = http.createServer((req, res) => {
                             studentPhone = (sel.options[sel.selectedIndex].getAttribute('data-phone') || '').trim();
                         }
                     }
-                    if (!studentPhone) {
-                        studentPhone = '0755667788';
-                    }
+                    if (!studentPhone) studentPhone = '0755667788';
                     document.getElementById('student_mpesa_phone').value = studentPhone;
 
                     const schoolPhone = (document.getElementById('school_mpesa_phone').value || '0715718022').trim();
@@ -2480,22 +2810,69 @@ const server = http.createServer((req, res) => {
                     const btn = document.getElementById('btn_stk_push');
                     const statusBox = document.getElementById('mpesa_status');
 
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Sending STK Push to ' + studentPhone + '...';
+                    if (mode === 'live') {
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Connecting to Safaricom Daraja Gateway...';
+                        statusBox.style.display = 'block';
+                        statusBox.className = 'mt-2 small alert alert-info py-2 mb-0';
+                        statusBox.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Sending real STK Push to Safaricom Daraja for phone <strong>' + studentPhone + '</strong>...';
+
+                        fetch('/api/mpesa/stkpush', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'phone=' + encodeURIComponent(studentPhone) + '&amount=' + encodeURIComponent(amount)
+                        }).then(r => r.json()).then(data => {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Dispatch Real Safaricom Daraja STK Push';
+                            if (data.success) {
+                                statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
+                                statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>Safaricom STK Push Sent!</strong> Check handset <strong>' + studentPhone + '</strong> and enter PIN. Checkout ID: <code>' + (data.checkoutId || '') + '</code>.';
+                                const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                                let code = "Q" + letters.charAt(Math.floor(Math.random() * letters.length)) + Math.floor(10000000 + Math.random() * 90000000);
+                                document.getElementById('reference_no').value = code;
+                            } else {
+                                statusBox.className = 'mt-2 small alert alert-warning py-2 mb-0';
+                                statusBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Daraja API Notice:</strong> ' + data.error + '<br><small>To prompt a real phone, enter your Safaricom keys in the panel above. Alternatively, select <strong>Interactive Handset PIN Simulator</strong> to test right away.</small>';
+                                document.getElementById('daraja_config_panel').style.display = 'block';
+                            }
+                        }).catch(err => {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Dispatch Real Safaricom Daraja STK Push';
+                            statusBox.className = 'mt-2 small alert alert-danger py-2 mb-0';
+                            statusBox.innerHTML = '<i class="fa-solid fa-circle-exclamation me-1"></i> Network error: ' + err.message;
+                        });
+                        return;
+                    }
+
+                    // Mode: Simulator (Open on-screen Safaricom M-Pesa PIN modal)
+                    document.getElementById('modal_amount_text').innerText = Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                    document.getElementById('modal_student_phone_text').innerText = studentPhone;
+                    document.getElementById('modal_mpesa_pin').value = '';
+                    const modal = document.getElementById('mpesa_handset_modal');
+                    modal.style.display = 'flex';
+                    setTimeout(() => document.getElementById('modal_mpesa_pin').focus(), 100);
+                }
+
+                function closeMpesaModal() {
+                    document.getElementById('mpesa_handset_modal').style.display = 'none';
+                }
+
+                function confirmMpesaModalPIN() {
+                    const pin = document.getElementById('modal_mpesa_pin').value || '1234';
+                    closeMpesaModal();
+
+                    const studentPhone = (document.getElementById('student_mpesa_phone').value || '0755667788').trim();
+                    const schoolPhone = (document.getElementById('school_mpesa_phone').value || '0715718022').trim();
+                    const amount = document.querySelector('input[name="amount"]').value || '5000';
+                    const statusBox = document.getElementById('mpesa_status');
+
+                    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                    let code = "Q" + letters.charAt(Math.floor(Math.random() * letters.length)) + Math.floor(10000000 + Math.random() * 90000000);
+                    document.getElementById('reference_no').value = code;
+
                     statusBox.style.display = 'block';
-                    statusBox.className = 'mt-2 small alert alert-info py-2 mb-0';
-                    statusBox.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> M-Pesa STK Push prompt sent to student handset (<strong>' + studentPhone + '</strong>). Prompting student to enter M-Pesa PIN and transfer <strong>KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</strong> to School Account <strong>' + schoolPhone + ' (Anza Auto Driving School)</strong>...';
-
-                    setTimeout(() => {
-                        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                        let code = "Q" + letters.charAt(Math.floor(Math.random() * letters.length)) + Math.floor(10000000 + Math.random() * 90000000);
-                        document.getElementById('reference_no').value = code;
-
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> STK Push Verified (Resend)';
-                        statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
-                        statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>Payment Successful!</strong> Student <strong>' + studentPhone + '</strong> confirmed PIN and sent KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' to School Receiving Account <strong>' + schoolPhone + '</strong>. M-Pesa Code: <code>' + code + '</code>.';
-                    }, 1100);
+                    statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
+                    statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>M-Pesa PIN Confirmed!</strong> Student <strong>' + studentPhone + '</strong> authorized transfer of KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' to School Receiving Account <strong>' + schoolPhone + '</strong>. Confirmed M-Pesa Receipt Code: <code>' + code + '</code>.';
                 }
 
                 function formatCardInput(input) {

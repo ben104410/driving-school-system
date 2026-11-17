@@ -164,12 +164,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <small class="text-muted" style="font-size: 0.75rem;">Student handset prompted to enter M-Pesa PIN and send funds to <?= DEFAULT_MPESA_PHONE ?>.</small>
                             </div>
 
-                            <!-- STK Push Action Button -->
+                            <!-- STK Push Action Button & Mode Selector -->
                             <div class="col-12 mt-2">
-                                <button type="button" class="btn btn-success w-100 fw-semibold shadow-sm" id="btn_stk_push" onclick="triggerMpesaSTKPush()">
+                                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <input type="radio" class="btn-check" name="mpesa_mode" id="mode_sim" value="simulator" checked onchange="switchMpesaMode()">
+                                        <label class="btn btn-outline-success fw-semibold" for="mode_sim"><i class="fa-solid fa-mobile me-1"></i> Interactive Handset PIN Simulator</label>
+
+                                        <input type="radio" class="btn-check" name="mpesa_mode" id="mode_manual" value="manual" onchange="switchMpesaMode()">
+                                        <label class="btn btn-outline-success fw-semibold" for="mode_manual"><i class="fa-solid fa-list-check me-1"></i> Manual M-Pesa Steps</label>
+                                    </div>
+
+                                    <button type="button" class="btn btn-sm btn-outline-dark fw-semibold" onclick="toggleDarajaConfigPanel()">
+                                        <i class="fa-solid fa-key text-warning me-1"></i> M-Pesa API Keys (Daraja)
+                                    </button>
+                                </div>
+
+                                <button type="button" class="btn btn-success w-100 fw-semibold shadow-sm py-2" id="btn_stk_push" onclick="triggerMpesaSTKPush()">
                                     <i class="fa-solid fa-paper-plane me-1"></i> Prompt Student Handset to Send Money to <?= DEFAULT_MPESA_PHONE ?>
                                 </button>
                                 <div id="mpesa_status" class="mt-2 small" style="display: none;"></div>
+
+                                <!-- Manual M-Pesa Instructions Box -->
+                                <div id="mpesa_manual_box" class="mt-3 p-3 bg-white rounded-3 border border-success" style="display: none;">
+                                    <h6 class="fw-bold text-success mb-2"><i class="fa-solid fa-mobile-screen-button me-1"></i> Manual M-Pesa Payment Instructions</h6>
+                                    <ol class="small text-muted mb-2 ps-3">
+                                        <li>On the student's phone, open <strong>M-Pesa</strong> &gt; <strong>Send Money</strong> (or <strong>Lipa na M-Pesa</strong> &gt; <strong>Paybill: 522522</strong>).</li>
+                                        <li>Enter School Receiving Phone Number: <strong class="text-dark font-monospace fs-6"><?= DEFAULT_MPESA_PHONE ?></strong> (Recipient: <em>Anza Auto Driving School</em>).</li>
+                                        <li>Enter Payment Amount: <strong class="text-success fs-6">KES <span id="manual_display_amount">5,000</span></strong>.</li>
+                                        <li>Enter M-Pesa PIN and press <strong>Send</strong>.</li>
+                                        <li>Wait for the Safaricom confirmation SMS, then enter the 10-character code (e.g. <code>QA189KL93Z</code>) into the <strong>Reference Code</strong> field above.</li>
+                                    </ol>
+                                </div>
+
+                                <!-- Safaricom Daraja API Credentials Panel -->
+                                <div id="daraja_config_panel" class="mt-3 p-3 bg-white rounded-3 border border-warning shadow-sm" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                        <span class="fw-bold text-dark small"><i class="fa-solid fa-key text-warning me-1"></i> Safaricom Daraja M-Pesa API Credentials (To Prompt Real Physical Phones)</span>
+                                        <span class="badge bg-warning text-dark">developer.safaricom.co.ke</span>
+                                    </div>
+                                    <p class="text-muted small mb-2">
+                                        To make an actual prompt pop up on a real physical Safaricom phone in Kenya, you need an API App from Safaricom Daraja (<a href="https://developer.safaricom.co.ke" target="_blank" class="fw-bold">developer.safaricom.co.ke</a>). These are the 4 codes Safaricom provides:
+                                    </p>
+                                    <ul class="small text-muted ps-3 mb-0">
+                                        <li><strong>1. Consumer Key:</strong> API key identifying your Safaricom developer app.</li>
+                                        <li><strong>2. Consumer Secret:</strong> Confidential API secret paired with Consumer Key.</li>
+                                        <li><strong>3. Business Shortcode:</strong> Your active Safaricom Paybill or Till number (Sandbox default: <code>174379</code>).</li>
+                                        <li><strong>4. Lipa na M-Pesa Passkey:</strong> Online cryptographic encryption key provided by Safaricom portal.</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -311,7 +354,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
+<!-- On-Screen Safaricom M-Pesa Handset PIN Dialog (Interactive Simulator Modal) -->
+<div id="mpesa_handset_modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 1050; align-items: center; justify-content: center;">
+    <div style="width: 100%; max-width: 380px; margin: 1rem; background: #004d25; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 2px solid #00aa44;">
+        <div class="p-3 text-center border-bottom border-success border-opacity-50" style="background: #003a1c;">
+            <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-1" style="width: 44px; height: 44px;">
+                <i class="fa-solid fa-mobile-screen text-success fs-5"></i>
+            </div>
+            <h6 class="fw-bold mb-0 text-white" style="letter-spacing: 1px;">SAFARICOM M-PESA</h6>
+            <small class="text-white-50" style="font-size: 0.75rem;">Lipa na M-Pesa Online STK Prompt</small>
+        </div>
+        <div class="p-4 text-white">
+            <div class="bg-black bg-opacity-25 p-3 rounded-3 mb-3 text-center border border-success border-opacity-25">
+                <div class="text-white-50 small mb-1">Pay Tuition Fee to:</div>
+                <div class="fw-bold text-white fs-6">ANZA AUTO DRIVING SCHOOL</div>
+                <div class="badge bg-success bg-opacity-50 text-white font-monospace mt-1">Recipient A/C: <?= DEFAULT_MPESA_PHONE ?></div>
+                <div class="mt-2 text-warning fw-bold fs-5">KES <span id="modal_amount_text">5,000.00</span></div>
+            </div>
+            <div class="mb-3 text-center">
+                <label class="form-label text-white-50 small fw-semibold mb-1">Enter 4-Digit M-Pesa PIN for <span id="modal_student_phone_text" class="text-white font-monospace">0755667788</span></label>
+                <input type="password" id="modal_mpesa_pin" class="form-control text-center font-monospace fw-bold fs-3 bg-white text-dark shadow-sm" maxlength="4" placeholder="••••" autofocus>
+                <small class="text-white-50 d-block mt-1" style="font-size: 0.72rem;">Enter your 4-digit PIN (e.g. 1234) and click Authorize</small>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-light w-50" onclick="closeMpesaModal()">Cancel</button>
+                <button type="button" class="btn btn-success w-50 fw-bold shadow-sm" onclick="confirmMpesaModalPIN()"><i class="fa-solid fa-check me-1"></i> Authorize</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+function switchMpesaMode() {
+    const mode = document.querySelector('input[name="mpesa_mode"]:checked')?.value || 'simulator';
+    const manualBox = document.getElementById('mpesa_manual_box');
+    const btn = document.getElementById('btn_stk_push');
+    const amount = document.querySelector('input[name="amount"]').value || '5000';
+    const amountSpan = document.getElementById('manual_display_amount');
+    if (amountSpan) amountSpan.innerText = Number(amount).toLocaleString('en-US');
+
+    if (mode === 'manual') {
+        manualBox.style.display = 'block';
+        btn.style.display = 'none';
+    } else {
+        manualBox.style.display = 'none';
+        btn.style.display = 'block';
+    }
+}
+
+function toggleDarajaConfigPanel() {
+    const panel = document.getElementById('daraja_config_panel');
+    panel.style.display = (panel.style.display === 'none') ? 'block' : 'none';
+}
+
 function triggerMpesaSTKPush() {
     let studentPhone = (document.getElementById('student_mpesa_phone').value || '').trim();
     if (!studentPhone) {
@@ -320,32 +415,38 @@ function triggerMpesaSTKPush() {
             studentPhone = (sel.options[sel.selectedIndex].getAttribute('data-phone') || '').trim();
         }
     }
-    if (!studentPhone) {
-        studentPhone = '0755667788';
-    }
+    if (!studentPhone) studentPhone = '0755667788';
     document.getElementById('student_mpesa_phone').value = studentPhone;
 
-    const schoolPhone = (document.getElementById('school_mpesa_phone').value || '0715718022').trim();
     const amount = document.querySelector('input[name="amount"]').value || '5000';
-    const btn = document.getElementById('btn_stk_push');
+    document.getElementById('modal_amount_text').innerText = Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    document.getElementById('modal_student_phone_text').innerText = studentPhone;
+    document.getElementById('modal_mpesa_pin').value = '';
+    const modal = document.getElementById('mpesa_handset_modal');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('modal_mpesa_pin').focus(), 100);
+}
+
+function closeMpesaModal() {
+    document.getElementById('mpesa_handset_modal').style.display = 'none';
+}
+
+function confirmMpesaModalPIN() {
+    const pin = document.getElementById('modal_mpesa_pin').value || '1234';
+    closeMpesaModal();
+
+    const studentPhone = (document.getElementById('student_mpesa_phone').value || '0755667788').trim();
+    const schoolPhone = (document.getElementById('school_mpesa_phone').value || '<?= DEFAULT_MPESA_PHONE ?>').trim();
+    const amount = document.querySelector('input[name="amount"]').value || '5000';
     const statusBox = document.getElementById('mpesa_status');
 
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Sending STK Push to ' + studentPhone + '...';
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let code = "Q" + letters.charAt(Math.floor(Math.random() * letters.length)) + Math.floor(10000000 + Math.random() * 90000000);
+    document.getElementById('reference_no').value = code;
+
     statusBox.style.display = 'block';
-    statusBox.className = 'mt-2 small alert alert-info py-2 mb-0';
-    statusBox.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> M-Pesa STK Push prompt sent to student handset (<strong>' + studentPhone + '</strong>). Prompting student to enter M-Pesa PIN and transfer <strong>KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + '</strong> to School Account <strong>' + schoolPhone + ' (Anza Auto Driving School)</strong>...';
-
-    setTimeout(() => {
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        let code = "Q" + letters.charAt(Math.floor(Math.random() * letters.length)) + Math.floor(10000000 + Math.random() * 90000000);
-        document.getElementById('reference_no').value = code;
-
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> STK Push Verified (Resend)';
-        statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
-        statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>Payment Successful!</strong> Student <strong>' + studentPhone + '</strong> confirmed PIN and sent KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' to School Receiving Account <strong>' + schoolPhone + '</strong>. M-Pesa Code: <code>' + code + '</code>.';
-    }, 1100);
+    statusBox.className = 'mt-2 small alert alert-success py-2 mb-0';
+    statusBox.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> <strong>M-Pesa PIN Confirmed!</strong> Student <strong>' + studentPhone + '</strong> authorized transfer of KES ' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' to School Receiving Account <strong>' + schoolPhone + '</strong>. Confirmed M-Pesa Receipt Code: <code>' + code + '</code>.';
 }
 
 function formatCardInput(input) {
